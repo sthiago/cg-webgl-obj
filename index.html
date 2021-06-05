@@ -44,21 +44,25 @@
 <body>
     <script id="vs" type="x-shader/x-vertex"># version 300 es
         in vec4 a_position;
+        in vec4 a_color;
+        out vec4 v_color;
+
         uniform mat4 u_matrix; // matriz = projeção * transformações
 
         void main() {
             gl_Position = u_matrix * a_position;
+            v_color = a_color; // simplesmente passa a cor "pra frente"
         }
     </script>
 
     <script id="fs" type="x-shader/x-fragment">#version 300 es
         precision highp float;
 
-        uniform vec4 u_color;
+        in vec4 v_color; // recebe a cor do vertex shader, em vez de de um uniform
         out vec4 outColor; // a cor de saída
 
         void main() {
-            outColor = u_color;
+            outColor = v_color;
         }
     </script>
     <canvas id="canvas" width="600" height="400"></canvas>
