@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CG - Trabalho Final 1 - Thiago Pereira</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .clearfix:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        body {
+            background-color:ghostwhite;
+            font-family: 'DejaVu Serif', serif;
+        }
+
+        div {
+            margin: 4px;
+        }
+
+        #canvas {
+            float: left;
+            margin: 10px;;
+            padding: 0;
+            border: 1px solid lightgray;
+        }
+
+        #controls {
+            float: left;
+            padding: 10px;
+        }
+
+    </style>
+</head>
+<body>
+    <script id="vs" type="x-shader/x-vertex"># version 300 es
+        in vec4 a_position;
+        uniform mat4 u_matrix; // matriz = projeção * transformações
+
+        void main() {
+            gl_Position = u_matrix * a_position;
+        }
+    </script>
+
+    <script id="fs" type="x-shader/x-fragment">#version 300 es
+        precision highp float;
+
+        uniform vec4 u_color;
+        out vec4 outColor; // a cor de saída
+
+        void main() {
+            outColor = u_color;
+        }
+    </script>
+    <canvas id="canvas" width="600" height="400"></canvas>
+
+    <div id="controls">
+        <div id="load_obj">Carregar .OBJ: <input type="file" id="load_obj_input"></div>
+        <div id="sel_projecao">
+            Tipo de projeção:
+            <input type="radio" name="projecao" value="perspectiva" checked> Perspectiva
+            <input type="radio" name="projecao" value="ortografica"> Ortográfica
+        </div>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <div id="uiContainer">
+        <div id="ui">
+          <div id="x"></div>
+          <div id="y"></div>
+          <div id="z"></div>
+          <div id="angleX"></div>
+          <div id="angleY"></div>
+          <div id="angleZ"></div>
+          <div id="scaleX"></div>
+          <div id="scaleY"></div>
+          <div id="scaleZ"></div>
+        </div>
+      </div>
+
+    <script src="initShaders.js"></script>
+    <script src="webgl-utils.js"></script>
+    <script src="webgl-lessons-ui.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
