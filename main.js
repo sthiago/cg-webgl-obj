@@ -5,7 +5,8 @@ function parse_obj(str) {
     const faces = [];
 
     const lines = str.split("\n");
-    for (const l of lines) {
+    for (let l of lines) {
+        l = l.trim();
         // Pula comentários, linhas vazias, e keywords não suportadas
         if (l[0] == "" || l.startsWith("#") || l.startsWith("vt")) continue;
 
@@ -38,7 +39,10 @@ function parse_obj(str) {
             const valores = l.split(" ").filter(v => v != "");
 
             // Suporta apenas faces com 3 vértices (triângulos)
-            if (valores.length != 4) alert("Arquivo .OBJ não suportado");
+            if (valores.length != 4) {
+                console.log("Arquivo .OBJ não suportado");
+                console.log(valores);
+            }
 
             // Adiciona os vértices à face
             const f = { vertices: [], normals: [] };
@@ -82,7 +86,7 @@ function load_obj(gl, obj) {
     const data = [];
 
     for (const face of obj.faces) {
-        for (const vertice_idx of face) {
+        for (const vertice_idx of face.vertices) {
             const vertice = obj.vertices[vertice_idx];
             data.push(vertice.x, vertice.y, vertice.z);
         }
@@ -93,18 +97,18 @@ function load_obj(gl, obj) {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 }
 
-function load_colors(gl, n_vertices, n_faces) {
+function load_colors(gl, n_faces) {
     const data = [];
 
-    const colorR = Math.floor(Math.random() * 256);
-    const colorG = Math.floor(Math.random() * 256);
-    const colorB = Math.floor(Math.random() * 256);
-    for (let i = 0; i < n_faces; i+=1) {
+    for (let i = 0; i < n_faces; i+=2) {
+        const colorR = Math.floor(Math.random() * 256);
+        const colorG = Math.floor(Math.random() * 256);
+        const colorB = Math.floor(Math.random() * 256);
         data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
-        // data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
+        data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
     }
 
-    console.log(data);
+    // console.log(data);
 
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(data), gl.STATIC_DRAW);
 }
@@ -119,7 +123,7 @@ function degToRad(d) {
     return d * Math.PI / 180;
 }
 
-function main() {
+async function main() {
     // Inicializa contexto WebGL2
     const canvas = document.querySelector("#canvas");
     const gl = canvas.getContext("webgl2");
@@ -148,6 +152,12 @@ function main() {
     // const obj = parse_obj(pot);
     // load_obj(gl, obj);
 
+    const resp = await fetch("objs/teapot.obj");
+    const str = await resp.text();
+    const obj = parse_obj(str);
+    load_obj(gl, obj);
+
+
     // Configura o ponteiro do buffer de posição (a_position)
     gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
 
@@ -155,12 +165,12 @@ function main() {
     const colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     // setColors(gl);
-    // load_colors(gl, obj.vertices.length, obj.faces.length);
+    load_colors(gl, obj.faces.length);
     gl.enableVertexAttribArray(a_color);
     gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
 
     // Valores iniciais
-    const translation = [-150, 0, -360];
+    const translation = [0, 0, -500];
     const rotation = [degToRad(0), degToRad(0), degToRad(0)];
     const scale = [1, 1, 1];
 
@@ -170,12 +180,12 @@ function main() {
     webglLessonsUI.setupSlider("#x",      {value: translation[0], slide: updatePosition(0), min: -100, max: gl.canvas.width });
     webglLessonsUI.setupSlider("#y",      {value: translation[1], slide: updatePosition(1), min: -100, max: gl.canvas.height});
     webglLessonsUI.setupSlider("#z",      {value: translation[2], slide: updatePosition(2), min: -1000, max: 0});
-    webglLessonsUI.setupSlider("#angleX", {value: radToDeg(rotation[0]), slide: updateRotation(0), max: 360});
-    webglLessonsUI.setupSlider("#angleY", {value: radToDeg(rotation[1]), slide: updateRotation(1), max: 360});
-    webglLessonsUI.setupSlider("#angleZ", {value: radToDeg(rotation[2]), slide: updateRotation(2), max: 360});
-    webglLessonsUI.setupSlider("#scaleX", {value: scale[0], slide: updateScale(0), min: -5, max: 50, step: 0.01, precision: 2});
-    webglLessonsUI.setupSlider("#scaleY", {value: scale[1], slide: updateScale(1), min: -5, max: 50, step: 0.01, precision: 2});
-    webglLessonsUI.setupSlider("#scaleZ", {value: scale[2], slide: updateScale(2), min: -5, max: 50, step: 0.01, precision: 2});
+    webglLessonsUI.setupSlider("#angleX", {value: radToDeg(rotation[0]), slide: updateRotation(0), min: -180, max: 180});
+    webglLessonsUI.setupSlider("#angleY", {value: radToDeg(rotation[1]), slide: updateRotation(1), min: -180, max: 180});
+    webglLessonsUI.setupSlider("#angleZ", {value: radToDeg(rotation[2]), slide: updateRotation(2), min: -180, max: 180});
+    webglLessonsUI.setupSlider("#scaleX", {value: scale[0], slide: updateScale(0), min: -1, max: 1, step: 0.01, precision: 2});
+    webglLessonsUI.setupSlider("#scaleY", {value: scale[1], slide: updateScale(1), min: -1, max: 1, step: 0.01, precision: 2});
+    webglLessonsUI.setupSlider("#scaleZ", {value: scale[2], slide: updateScale(2), min: -1, max: 1, step: 0.01, precision: 2});
 
     // Draw the scene.
     function drawScene() {
@@ -205,7 +215,7 @@ function main() {
         gl.uniformMatrix4fv(u_matrix, false, matrix);
         gl.uniform1f(u_fudgefactor, 1.0);
 
-        // gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
+        gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
     }
 
     // Handlers da UI
@@ -399,15 +409,3 @@ var m4 = {
 };
 
 main();
-
-
-async function test() {
-    const resp = await fetch("objs/apples.obj");
-    const str = await resp.text();
-    const obj = parse_obj(str);
-    load_obj(obj);
-
-    console.log(obj);
-}
-
-test();
