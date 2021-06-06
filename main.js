@@ -1,13 +1,13 @@
-
 /* Lê um arquivo .OBJ (suporte limitado) */
 function parse_obj(str) {
     const vertices = [];
+    const normals = [];
     const faces = [];
 
-    const lines = str.split('\n');
+    const lines = str.split("\n");
     for (const l of lines) {
-        // Pula comentários e linhas vazias
-        if (l[0] == "#" || l[0] == '') continue;
+        // Pula comentários, linhas vazias, e keywords não suportadas
+        if (l[0] == "" || l.startsWith("#") || l.startsWith("vt")) continue;
 
         // Lê os vértices
         if (l.startsWith("v ")) {
@@ -18,22 +18,64 @@ function parse_obj(str) {
                 z: parseFloat(valores[3]),
             }
             vertices.push(v);
+            continue;
+        }
 
-            // Lê as faces
-        } else if (l.startsWith("f ")) {
+        // Lê as normais
+        if (l.startsWith("vn ")) {
             const valores = l.split(" ").filter(v => v != "");
-            const f = [
-                parseInt(valores[1])-1,
-                parseInt(valores[2])-1,
-                parseInt(valores[3])-1,
-            ];
+            const n = {
+                x: parseFloat(valores[1]),
+                y: parseFloat(valores[2]),
+                z: parseFloat(valores[3]),
+            }
+            normals.push(n);
+            continue;
+        }
+
+        // Lê as faces
+        if (l.startsWith("f ")) {
+            const valores = l.split(" ").filter(v => v != "");
+
+            // Suporta apenas faces com 3 vértices (triângulos)
+            if (valores.length != 4) alert("Arquivo .OBJ não suportado");
+
+            // Adiciona os vértices à face
+            const f = { vertices: [], normals: [] };
+            for (const valor of valores.slice(1)) {
+                // Tenta splitar o valor em "/" pra saber se tem textcoords e normais
+                const splitted = valor.split("/");
+                let vertice_idx, normal_idx;
+                if (splitted.length == 3) {
+                    vertice_idx = parseInt(splitted[0]);
+                    normal_idx = parseInt(splitted[2]);
+
+                    // Resolve referências negativas
+                    if (vertice_idx < 0) {
+                        vertice_idx = vertices.length + vertice_idx;
+                    } else {
+                        vertice_idx = vertice_idx - 1;
+                    }
+
+                    if (normal_idx < 0) {
+                        normal_idx = normals.length + normal_idx;
+                    } else {
+                        normal_idx = normal_idx - 1;
+                    }
+                } else if (splitted.length == 1) {
+                    vertice_idx = parseInt(splitted[0]) - 1;
+                }
+
+                // Adiciona vértice/normal à face
+                f.vertices.push(vertice_idx);
+                f.normals.push(normal_idx);
+            }
             faces.push(f);
         }
     }
 
-    console.log({ vertices, faces })
-
-    return { vertices, faces };
+    const rv = { vertices, normals, faces };
+    return rv;
 }
 
 function load_obj(gl, obj) {
@@ -103,8 +145,8 @@ function main() {
 
     // Carrega os dados do F no buffer
     // setGeometry(gl);
-    const obj = parse_obj(pot);
-    load_obj(gl, obj);
+    // const obj = parse_obj(pot);
+    // load_obj(gl, obj);
 
     // Configura o ponteiro do buffer de posição (a_position)
     gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
@@ -113,7 +155,7 @@ function main() {
     const colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     // setColors(gl);
-    load_colors(gl, obj.vertices.length, obj.faces.length);
+    // load_colors(gl, obj.vertices.length, obj.faces.length);
     gl.enableVertexAttribArray(a_color);
     gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
 
@@ -163,7 +205,7 @@ function main() {
         gl.uniformMatrix4fv(u_matrix, false, matrix);
         gl.uniform1f(u_fudgefactor, 1.0);
 
-        gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
+        // gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
     }
 
     // Handlers da UI
@@ -357,5 +399,15 @@ var m4 = {
 };
 
 main();
-// obj = parse_obj(cubo);
-// load_obj(obj);
+
+
+async function test() {
+    const resp = await fetch("objs/apples.obj");
+    const str = await resp.text();
+    const obj = parse_obj(str);
+    load_obj(obj);
+
+    console.log(obj);
+}
+
+test();
