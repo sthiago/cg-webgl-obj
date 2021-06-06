@@ -47,10 +47,15 @@
         in vec4 a_color;
         out vec4 v_color;
 
+        uniform float u_fudgefactor;
         uniform mat4 u_matrix; // matriz = projeção * transformações
 
         void main() {
-            gl_Position = u_matrix * a_position;
+            vec4 position = u_matrix * a_position;
+            // float z_to_divide_by = 1.0 + position.z * u_fudgefactor;
+
+            // gl_Position = vec4(position.xyz, z_to_divide_by);
+            gl_Position = position;
             v_color = a_color; // simplesmente passa a cor "pra frente"
         }
     </script>
