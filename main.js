@@ -1,5 +1,6 @@
 /* Lê um arquivo .OBJ (suporte limitado) */
-function parse_obj(str) {
+function parse_obj(str)
+{
     const vertices = [];
     const normals = [];
     const faces = [];
@@ -77,7 +78,7 @@ function parse_obj(str) {
                     } else {
                         normal_idx = normal_idx - 1;
                     }
-                } else if (splitted.length == 1) {
+                } else if (splitted.length == 1 || splitted.length == 2) {
                     vertice_idx = parseInt(splitted[0]) - 1;
                 }
 
@@ -97,7 +98,10 @@ function parse_obj(str) {
     return rv;
 }
 
-function load_obj(gl, obj) {
+
+/* Carrega os vértices de um .OBJ no buffer */
+function load_obj(gl, obj)
+{
     const data = [];
 
     for (const face of obj.faces) {
@@ -107,12 +111,16 @@ function load_obj(gl, obj) {
         }
     }
 
-    console.log(data);
-
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 }
 
-function load_colors(gl, n_faces, groups) {
+
+/**
+ * Para cada grupo de faces, atribui uma cor aleatória. Se o objeto não tiver grupos,
+ * ou tiver apenas um grupo, uma cor aleatória é atribuída a cada 2 faces consecutivas
+ */
+function load_colors(gl, n_faces, groups)
+{
     const data = [];
 
     if (groups.length == 0) {
@@ -136,22 +144,17 @@ function load_colors(gl, n_faces, groups) {
         }
     }
 
-    // console.log(data);
-
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(data), gl.STATIC_DRAW);
 }
 
 
 // Utilitários
-function radToDeg(r) {
-    return r * 180 / Math.PI;
-}
+function radToDeg(r) { return r * 180 / Math.PI; }
+function degToRad(d) { return d * Math.PI / 180; }
 
-function degToRad(d) {
-    return d * Math.PI / 180;
-}
 
-async function main() {
+async function main()
+{
     // Inicializa contexto WebGL2
     const canvas = document.querySelector("#canvas");
     const gl = canvas.getContext("webgl2");
@@ -169,33 +172,27 @@ async function main() {
     const u_matrix = gl.getUniformLocation(program, "u_matrix");
     const u_fudgefactor = gl.getUniformLocation(program, "u_fudgefactor");
 
-    const positionBuffer = gl.createBuffer();
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
-    gl.enableVertexAttribArray(a_position);
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-    // Carrega os dados do F no buffer
-    // setGeometry(gl);
-    // const obj = parse_obj(pot);
-    // load_obj(gl, obj);
-
+    // Lê arquivo.obj
     const resp = await fetch("objs/apples.obj");
     const str = await resp.text();
     const obj = parse_obj(str);
+
+    // Carrega vértices no buffer
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.enableVertexAttribArray(a_position);
+    gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
     load_obj(gl, obj);
 
-
-    // Configura o ponteiro do buffer de posição (a_position)
-    gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
-
-    // Mesma coisa, agora pra a_color
+    // Carrega cores no buffer
     const colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    // setColors(gl);
-    load_colors(gl, obj.faces.length, obj.groups);
     gl.enableVertexAttribArray(a_color);
     gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
+    load_colors(gl, obj.faces.length, obj.groups);
 
     // Valores iniciais
     const translation = [0, 0, -800];
@@ -217,7 +214,6 @@ async function main() {
 
     // Draw the scene.
     function drawScene() {
-        // webglUtils.resizeCanvasToDisplaySize(gl.canvas);
 
         // Configurações iniciais para desenhar a cena
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
