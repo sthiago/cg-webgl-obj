@@ -147,6 +147,37 @@ function load_colors(gl, n_faces, groups)
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(data), gl.STATIC_DRAW);
 }
 
+/**
+ * Encontra centro da bounding box dos vértices
+ */
+function find_center(vertices) {
+    let [ xmax, xmin ] = [ vertices[0].x, vertices[0].x ];
+    let [ ymax, ymin ] = [ vertices[0].y, vertices[0].y ];
+    let [ zmax, zmin ] = [ vertices[0].z, vertices[0].z ];
+
+    for (const v of vertices) {
+        if (v.x > xmax) xmax = v.x;
+        if (v.y > ymax) ymax = v.y;
+        if (v.z > zmax) zmax = v.z;
+
+        if (v.x < xmin) xmin = v.x;
+        if (v.y < ymin) ymin = v.y;
+        if (v.z < zmin) zmin = v.z;
+    }
+
+    const xc = (xmax + xmin)/2;
+    const yc = (ymax + ymin)/2;
+    const zc = (zmax + zmin)/2;
+
+    const rv = {
+        centro: { xc, yc, zc },
+        max: { x: xmax, y: ymax, z: zmax },
+        min: { x: xmin, y: ymin, z: zmin }
+    };
+    console.log(rv);
+
+    return rv;
+}
 
 // Utilitários
 function radToDeg(r) { return r * 180 / Math.PI; }
@@ -176,7 +207,7 @@ async function main()
     gl.bindVertexArray(vao);
 
     // Lê arquivo.obj
-    const resp = await fetch("objs/apples.obj");
+    const resp = await fetch("objs/cubo.obj");
     const str = await resp.text();
     const obj = parse_obj(str);
 
@@ -194,9 +225,21 @@ async function main()
     gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
     load_colors(gl, obj.faces.length, obj.groups);
 
-    // Valores iniciais
-    const translation = [0, 0, -800];
-    const rotation = [degToRad(30), degToRad(0), degToRad(0)];
+    // Encontra centro do objeto
+    const center = find_center(obj.vertices);
+
+    // Valores do frustum
+    const near = 300;
+    const far = 2000;
+    const fov = degToRad(60);
+
+    // Cálculo da distância do objeto para que fique a uma distância boa do eye
+    const d = (near * 10 * (center.max.y + center.min.y)/2) / (2 * near * Math.tan(fov/2));
+
+    console.log(d);
+
+    const translation = [-center.centro.xc, -center.centro.yc, -center.centro.zc-400];
+    const rotation = [degToRad(0), degToRad(0), degToRad(0)];
     const scale = [1, 1, 1];
 
     drawScene();
@@ -213,8 +256,8 @@ async function main()
     webglLessonsUI.setupSlider("#scaleZ", {value: scale[2], slide: updateScale(2), min: -1, max: 1, step: 0.01, precision: 2});
 
     // Draw the scene.
-    function drawScene() {
-
+    function drawScene()
+    {
         // Configurações iniciais para desenhar a cena
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clearColor(1, 1, 1, 1);
@@ -228,7 +271,7 @@ async function main()
         // No shader, essa matriz é multiplicada pela posição
         // const matrix = m4.projection(gl.canvas.clientWidth, gl.canvas.clientHeight, 400);
         // let matrix = m4.orthographic(0, gl.canvas.clientWidth, gl.canvas.clientHeight, 0, 400, -400)
-        let matrix = m4.perspective(degToRad(60), gl.canvas.clientWidth / gl.canvas.clientHeight, 1, 2000)
+        let matrix = m4.perspective(fov, gl.canvas.clientWidth / gl.canvas.clientHeight, near, far)
 
         matrix = m4.translate(matrix, translation[0], translation[1], translation[2]);
         matrix = m4.xRotate(matrix, rotation[0]);
