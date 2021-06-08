@@ -1,5 +1,32 @@
 const { mat2, mat2d, mat3, mat4, quat, quat2, vec2, vec3, vec4 } = glMatrix;
 
+const origin = vec3.fromValues(0, 0, 0);
+const yup = vec3.fromValues(0, 1, 0);
+const zout = vec3.fromValues(0, 0, 1);
+
+let drawScene;
+
+// Câmera sintética
+let eye;
+let target = origin;
+const modelview = mat4.create();
+const projectionview = mat4.create();
+let eye_dx = 0, eye_dy = 0, eye_dz = 0;
+let eye_rx = 0, eye_ry = 0, eye_rz = 0;
+
+// Projeção
+let ortografica = false; // false significa perspectiva
+
+/**
+ * Função utilitária que gera números aleatórios baseados numa seed
+ * Fonte: https://stackoverflow.com/a/19303725/1694726
+ */
+let seed = 1;
+function random() {
+    var x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+}
+
 /* Lê um arquivo .OBJ (suporte limitado) */
 function parse_obj(str)
 {
@@ -129,17 +156,17 @@ function load_colors(gl, n_faces, groups)
         // De 2 em 2 pra ficar aproximadamente 1 cor por retângulo em vez de 1 cor por
         // triângulo
         for (let i = 0; i < n_faces; i+=2) {
-            const colorR = Math.floor(Math.random() * 256);
-            const colorG = Math.floor(Math.random() * 256);
-            const colorB = Math.floor(Math.random() * 256);
+            const colorR = Math.floor(random() * 256);
+            const colorG = Math.floor(random() * 256);
+            const colorB = Math.floor(random() * 256);
             data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
             data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
         }
     } else {
         for (const n_faces_no_grupo of groups) {
-            const colorR = Math.floor(Math.random() * 256);
-            const colorG = Math.floor(Math.random() * 256);
-            const colorB = Math.floor(Math.random() * 256);
+            const colorR = Math.floor(random() * 256);
+            const colorG = Math.floor(random() * 256);
+            const colorB = Math.floor(random() * 256);
             for (let i = 0; i < n_faces_no_grupo; i++) {
                 data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
             }
@@ -149,9 +176,7 @@ function load_colors(gl, n_faces, groups)
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(data), gl.STATIC_DRAW);
 }
 
-/**
- * Encontra centro da bounding box dos vértices
- */
+// Encontra centro da bounding box dos vértices
 function find_center(vertices) {
     let [ xmax, xmin ] = [ vertices[0].x, vertices[0].x ];
     let [ ymax, ymin ] = [ vertices[0].y, vertices[0].y ];
@@ -181,13 +206,57 @@ function find_center(vertices) {
     return rv;
 }
 
+
+// Função de inicialização da câmera sintética
+function init_camera(distance)
+{
+    // Eye: Posição da câmera sintética
+    eye = vec3.fromValues(0, 0, distance);
+
+    // ModelView: Orientação da câmera sintética
+    mat4.lookAt(modelview, eye, target, yup);
+}
+
+function update_camera()
+{
+    eye_dx = parseFloat(document.getElementById("xeye").value);
+    eye_dy = parseFloat(document.getElementById("yeye").value);
+    eye_dz = parseFloat(document.getElementById("zeye").value);
+
+    document.getElementById("xeye_val").textContent = eye_dx;
+    document.getElementById("yeye_val").textContent = eye_dy;
+    document.getElementById("zeye_val").textContent = eye_dz;
+
+    // Translada a câmera
+    const translation = vec3.fromValues(eye_dx, eye_dy, eye_dz);
+    const translated_eye = vec3.create();
+    vec3.add(translated_eye, eye, translation);
+
+    // Translada o target
+    const translated_target = vec3.create();
+    vec3.add(translated_target, target, translation);
+
+    // Atualiza ModelView
+    mat4.lookAt(modelview, translated_eye, translated_target, yup);
+
+    drawScene();
+}
+
+function init_controls()
+{
+    document.getElementById("xeye").oninput = update_camera;
+    document.getElementById("yeye").oninput = update_camera;
+    document.getElementById("zeye").oninput = update_camera;
+}
+
 // Utilitários
 function radToDeg(r) { return r * 180 / Math.PI; }
 function degToRad(d) { return d * Math.PI / 180; }
 
-
 async function main()
 {
+    seed = 1;
+
     // Inicializa contexto WebGL2
     const canvas = document.querySelector("#canvas");
     const gl = canvas.getContext("webgl2");
@@ -230,20 +299,8 @@ async function main()
 
     // //////////////////////////////////////////////
 
-    // Eye -- Posição da câmera sintética
-    //        Quero que ele esteja posicionado no eixo z olhando para a origem
-    const eye = vec3.fromValues(0, 0, 10);
-
-    // ModelView -- É a matriz que representa como a câmera está posicionada no espaço.
-    //              Quero que ela esteja com o up na direção do eixo Oy mesmo
-    const yup = vec3.fromValues(0, 1, 0);
-    const origin = vec3.fromValues(0, 0, 0);
-    const modelview = mat4.create();
-    mat4.lookAt(modelview, eye, origin, yup);
-
     // ProjectionView -- É a matriz que representa a projeção. Pode ser ortográfica ou
     //                   perspectiva
-    const projectionview = mat4.create();
     const fovy = degToRad(60);
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const near = 1;
@@ -252,17 +309,14 @@ async function main()
 
     // Transform -- É a matriz de transformação do objeto. Pode conter N transformações
     //              em sequência
-    const zout = vec3.fromValues(0, 0, 1);
     const transform = mat4.create();
-    mat4.rotate(transform, transform, degToRad(20), zout);
-    console.log(transform);
+    // mat4.rotate(transform, transform, degToRad(20), zout);
+    // console.log(transform);
 
     // ////////////////////////////////////////////////
 
-    drawScene();
-
     // Draw the scene.
-    function drawScene()
+    drawScene = function()
     {
         // Configurações iniciais para desenhar a cena
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -279,6 +333,10 @@ async function main()
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
     }
+
+    drawScene();
 }
 
+init_camera(10);
+init_controls();
 main();
