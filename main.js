@@ -5,18 +5,21 @@ const yup = vec3.fromValues(0, 1, 0);
 const xup = vec3.fromValues(1, 0, 0);
 const zout = vec3.fromValues(0, 0, 1);
 
+let gl;
 let drawScene;
 
 // Câmera sintética
 let eye;
 let target = origin;
 const modelview = mat4.create();
-const projectionview = mat4.create();
 let eye_dx = 0, eye_dy = 0, eye_dz = 0;
 let eye_rx = 0, eye_ry = 0, eye_rz = 0;
 
 // Projeção
-let ortografica = false; // false significa perspectiva
+const projectionview = mat4.create();
+let tipo_projecao, fovy, aspect, near, far;
+let left, right, bottom, _top;
+
 
 /**
  * Função utilitária que gera números aleatórios baseados numa seed
@@ -27,6 +30,12 @@ function random() {
     var x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
 }
+
+
+// Utilitários
+function radToDeg(r) { return r * 180 / Math.PI; }
+function degToRad(d) { return d * Math.PI / 180; }
+
 
 /* Lê um arquivo .OBJ (suporte limitado) */
 function parse_obj(str)
@@ -218,6 +227,8 @@ function init_camera(distance)
     mat4.lookAt(modelview, eye, target, yup);
 }
 
+
+// Função que atualiza os parâmetros da câmera de acordo com a UI
 function update_camera()
 {
     eye_dx = parseFloat(document.getElementById("xeye").value);
@@ -257,32 +268,80 @@ function update_camera()
     drawScene();
 }
 
+
+// Função de inicialização da projeção
+function init_projection()
+{
+    tipo_projecao = "perspectiva";
+    document.getElementById("radio_persp").checked = true;
+    fovy = degToRad(60);
+    aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
+    near = 1;
+    far = 2000;
+    mat4.perspective(projectionview, fovy, aspect, near, far);
+
+    // Inicializa valores da ortográfica também
+    left = -10;
+    right = 10;
+    bottom = -10 / aspect;
+    _top = 10 / aspect;
+}
+
+
+// Função que atualiza os parâmetros da projeção de acordo com a UI
+function update_projection()
+{
+    if (document.getElementById("radio_persp").checked) tipo_projecao = "perspectiva";
+    if (document.getElementById("radio_ortho").checked) tipo_projecao = "ortografica";
+
+    // Atualiza projeção
+    if (tipo_projecao == "perspectiva") {
+        mat4.perspective(projectionview, fovy, aspect, near, far);
+    } else if (tipo_projecao == "ortografica") {
+        mat4.ortho(projectionview, left, right, bottom, _top, near, far);
+    }
+
+    drawScene();
+}
+
 function init_controls()
 {
+    // Posição e orientação da câmera
     document.getElementById("xeye").oninput = update_camera;
     document.getElementById("yeye").oninput = update_camera;
     document.getElementById("zeye").oninput = update_camera;
     document.getElementById("rxeye").oninput = update_camera;
     document.getElementById("ryeye").oninput = update_camera;
     document.getElementById("rzeye").oninput = update_camera;
+
+    // Projeção
+    document.getElementById("radio_persp").onchange = update_projection;
+    document.getElementById("radio_ortho").onchange = update_projection;
 }
 
-// Utilitários
-function radToDeg(r) { return r * 180 / Math.PI; }
-function degToRad(d) { return d * Math.PI / 180; }
 
-async function main()
+// Função de inicialização geral
+function init()
 {
     seed = 1;
 
     // Inicializa contexto WebGL2
     const canvas = document.querySelector("#canvas");
-    const gl = canvas.getContext("webgl2");
+    gl = canvas.getContext("webgl2");
 
     if (!gl) {
         alert("Sem suporte a WebGL 2.0");
         throw Error("Sem suporte a WebGL 2.0");
     }
+
+    init_camera(10);
+    init_projection();
+    init_controls();
+}
+
+
+async function main()
+{
 
     const program = initShaders(gl, "vs", "fs");
 
@@ -317,14 +376,6 @@ async function main()
 
     // //////////////////////////////////////////////
 
-    // ProjectionView -- É a matriz que representa a projeção. Pode ser ortográfica ou
-    //                   perspectiva
-    const fovy = degToRad(60);
-    const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    const near = 1;
-    const far = 2000;
-    mat4.perspective(projectionview, fovy, aspect, near, far);
-
     // Transform -- É a matriz de transformação do objeto. Pode conter N transformações
     //              em sequência
     const transform = mat4.create();
@@ -355,6 +406,5 @@ async function main()
     drawScene();
 }
 
-init_camera(10);
-init_controls();
+init();
 main();
