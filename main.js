@@ -264,8 +264,6 @@ function update_camera()
     mat4.rotate(modelview, modelview, degToRad(eye_rx), xup);
     mat4.rotate(modelview, modelview, degToRad(eye_ry), yup);
     mat4.rotate(modelview, modelview, degToRad(eye_rz), zout);
-
-    drawScene();
 }
 
 
@@ -274,34 +272,69 @@ function init_projection()
 {
     tipo_projecao = "perspectiva";
     document.getElementById("radio_persp").checked = true;
-    fovy = degToRad(60);
+    fovy = 60;
     aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     near = 1;
     far = 2000;
-    mat4.perspective(projectionview, fovy, aspect, near, far);
+    mat4.perspective(projectionview, degToRad(fovy), aspect, near, far);
 
     // Inicializa valores da ortográfica também
     left = -10;
     right = 10;
-    bottom = -10 / aspect;
-    _top = 10 / aspect;
+    bottom = Math.floor(-10 / aspect);
+    _top = Math.floor(10 / aspect);
+
+    // Inicializa valores da UI
+    document.getElementById("near").value = near;
+    document.getElementById("near_val").textContent = near;
+
+    document.getElementById("far").value = far;
+    document.getElementById("far_val").textContent = far;
+
+    document.getElementById("fovy").value = fovy;
+    document.getElementById("fovy_val").textContent = fovy;
+
+    document.getElementById("left").value = left;
+    document.getElementById("left_val").textContent = left;
+    document.getElementById("right").value = right;
+    document.getElementById("right_val").textContent = right;
+    document.getElementById("top").value = _top;
+    document.getElementById("top_val").textContent = _top;
+    document.getElementById("bottom").value = bottom;
+    document.getElementById("bottom_val").textContent = bottom;
 }
 
 
 // Função que atualiza os parâmetros da projeção de acordo com a UI
 function update_projection()
 {
+    // Troca tipo de projeção
     if (document.getElementById("radio_persp").checked) tipo_projecao = "perspectiva";
     if (document.getElementById("radio_ortho").checked) tipo_projecao = "ortografica";
 
+    // Atualiza parâmetros das projeções
+    near = parseFloat(document.getElementById("near").value);
+    far = parseFloat(document.getElementById("far").value);
+    fovy = parseFloat(document.getElementById("fovy").value);
+    left = parseFloat(document.getElementById("left").value);
+    right = parseFloat(document.getElementById("right").value);
+    _top = parseFloat(document.getElementById("top").value);
+    bottom = parseFloat(document.getElementById("bottom").value);
+
+    document.getElementById("near_val").textContent = near;
+    document.getElementById("far_val").textContent = far;
+    document.getElementById("fovy_val").textContent = fovy;
+    document.getElementById("left_val").textContent = left;
+    document.getElementById("right_val").textContent = right;
+    document.getElementById("top_val").textContent = _top;
+    document.getElementById("bottom_val").textContent = bottom;
+
     // Atualiza projeção
     if (tipo_projecao == "perspectiva") {
-        mat4.perspective(projectionview, fovy, aspect, near, far);
+        mat4.perspective(projectionview, degToRad(fovy), aspect, near, far);
     } else if (tipo_projecao == "ortografica") {
         mat4.ortho(projectionview, left, right, bottom, _top, near, far);
     }
-
-    drawScene();
 }
 
 function init_controls()
@@ -317,6 +350,15 @@ function init_controls()
     // Projeção
     document.getElementById("radio_persp").onchange = update_projection;
     document.getElementById("radio_ortho").onchange = update_projection;
+
+    document.getElementById("near").oninput = update_projection;
+    document.getElementById("far").oninput = update_projection;
+    document.getElementById("fovy").oninput = update_projection;
+    document.getElementById("left").oninput = update_projection;
+    document.getElementById("right").oninput = update_projection;
+    document.getElementById("top").oninput = update_projection;
+    document.getElementById("bottom").oninput = update_projection;
+
 }
 
 
@@ -342,7 +384,6 @@ function init()
 
 async function main()
 {
-
     const program = initShaders(gl, "vs", "fs");
 
     // Configuração de atributos e uniforms
@@ -383,27 +424,29 @@ async function main()
     // console.log(transform);
 
     // ////////////////////////////////////////////////
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(1, 1, 1, 1);
+    gl.useProgram(program);
+    gl.bindVertexArray(vao);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
 
     // Draw the scene.
     drawScene = function()
     {
         // Configurações iniciais para desenhar a cena
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.clearColor(1, 1, 1, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.enable(gl.CULL_FACE);
-        gl.enable(gl.DEPTH_TEST);
-        gl.useProgram(program);
-        gl.bindVertexArray(vao);
 
         gl.uniformMatrix4fv(u_modelview, false, modelview);
         gl.uniformMatrix4fv(u_projectionview, false, projectionview);
         gl.uniformMatrix4fv(u_transform, false, transform);
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
+
+        window.requestAnimationFrame(() => drawScene());
     }
 
-    drawScene();
+    window.requestAnimationFrame(() => drawScene());
 }
 
 init();

@@ -80,10 +80,18 @@
         Projeção:
         <div class="control"><input type="radio" name="projecao" value="perspectiva" id="radio_persp"> Perspectiva</div>
         <div class="control"><input type="radio" name="projecao" value="ortografica" id="radio_ortho"> Ortográfica</div>
-        Eye:
-        <div class="control">dx: <input type="range" id="xeye" min="-100" max="100" step="0.1"><span id="xeye_val"> 0</span></div>
-        <div class="control">dy: <input type="range" id="yeye" min="-100" max="100" step="0.1"><span id="yeye_val"> 0</span></div>
-        <div class="control">dz: <input type="range" id="zeye" min="-100" max="100" step="0.1"><span id="zeye_val"> 0</span></div>
+        <div class="control">near: <input type="range" id="near" min="1" max="2000" step="1"><span id="near_val"> 0</span></div>
+        <div class="control">far: <input type="range" id="far" min="1" max="2000" step="1"><span id="far_val"> 0</span></div>
+        <div class="control">fov(y): <input type="range" id="fovy" min="1" max="90" step="1"><span id="fovy_val"> 0</span></div>
+        <div class="control">left: <input type="range" id="left" min="-100" max="100" step="1"><span id="left_val"> 0</span></div>
+        <div class="control">right: <input type="range" id="right" min="-100" max="100" step="1"><span id="right_val"> 0</span></div>
+        <div class="control">bottom: <input type="range" id="bottom" min="-100" max="100" step="1"><span id="bottom_val"> 0</span></div>
+        <div class="control">top: <input type="range" id="top" min="-100" max="100" step="1"><span id="top_val"> 0</span></div>
+
+        <br> Eye:
+        <div class="control">dx: <input type="range" id="xeye" min="-100" max="100" step="0.01"><span id="xeye_val"> 0</span></div>
+        <div class="control">dy: <input type="range" id="yeye" min="-100" max="100" step="0.01"><span id="yeye_val"> 0</span></div>
+        <div class="control">dz: <input type="range" id="zeye" min="-100" max="100" step="0.01"><span id="zeye_val"> 0</span></div>
         <div class="control">rx: <input type="range" id="rxeye" min="-180" max="180" step="0.1"><span id="rxeye_val"> 0</span></div>
         <div class="control">ry: <input type="range" id="ryeye" min="-180" max="180" step="0.1"><span id="ryeye_val"> 0</span></div>
         <div class="control">rz: <input type="range" id="rzeye" min="-180" max="180" step="0.1"><span id="rzeye_val"> 0</span></div>
