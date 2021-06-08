@@ -2,6 +2,7 @@ const { mat2, mat2d, mat3, mat4, quat, quat2, vec2, vec3, vec4 } = glMatrix;
 
 const origin = vec3.fromValues(0, 0, 0);
 const yup = vec3.fromValues(0, 1, 0);
+const xup = vec3.fromValues(1, 0, 0);
 const zout = vec3.fromValues(0, 0, 1);
 
 let drawScene;
@@ -227,6 +228,15 @@ function update_camera()
     document.getElementById("yeye_val").textContent = eye_dy;
     document.getElementById("zeye_val").textContent = eye_dz;
 
+    eye_rx = parseFloat(document.getElementById("rxeye").value);
+    eye_ry = parseFloat(document.getElementById("ryeye").value);
+    eye_rz = parseFloat(document.getElementById("rzeye").value);
+
+    document.getElementById("rxeye_val").textContent = eye_rx;
+    document.getElementById("ryeye_val").textContent = eye_ry;
+    document.getElementById("rzeye_val").textContent = eye_rz;
+
+
     // Translada a câmera
     const translation = vec3.fromValues(eye_dx, eye_dy, eye_dz);
     const translated_eye = vec3.create();
@@ -239,6 +249,11 @@ function update_camera()
     // Atualiza ModelView
     mat4.lookAt(modelview, translated_eye, translated_target, yup);
 
+    // Rotaciona ModelView
+    mat4.rotate(modelview, modelview, degToRad(eye_rx), xup);
+    mat4.rotate(modelview, modelview, degToRad(eye_ry), yup);
+    mat4.rotate(modelview, modelview, degToRad(eye_rz), zout);
+
     drawScene();
 }
 
@@ -247,6 +262,9 @@ function init_controls()
     document.getElementById("xeye").oninput = update_camera;
     document.getElementById("yeye").oninput = update_camera;
     document.getElementById("zeye").oninput = update_camera;
+    document.getElementById("rxeye").oninput = update_camera;
+    document.getElementById("ryeye").oninput = update_camera;
+    document.getElementById("rzeye").oninput = update_camera;
 }
 
 // Utilitários
