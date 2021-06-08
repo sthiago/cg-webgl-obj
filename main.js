@@ -244,17 +244,6 @@ async function main()
 
     drawScene();
 
-    // Configura a interface
-    webglLessonsUI.setupSlider("#x",      {value: translation[0], slide: updatePosition(0), min: -100, max: gl.canvas.width });
-    webglLessonsUI.setupSlider("#y",      {value: translation[1], slide: updatePosition(1), min: -100, max: gl.canvas.height});
-    webglLessonsUI.setupSlider("#z",      {value: translation[2], slide: updatePosition(2), min: -1000, max: 0});
-    webglLessonsUI.setupSlider("#angleX", {value: radToDeg(rotation[0]), slide: updateRotation(0), min: -180, max: 180});
-    webglLessonsUI.setupSlider("#angleY", {value: radToDeg(rotation[1]), slide: updateRotation(1), min: -180, max: 180});
-    webglLessonsUI.setupSlider("#angleZ", {value: radToDeg(rotation[2]), slide: updateRotation(2), min: -180, max: 180});
-    webglLessonsUI.setupSlider("#scaleX", {value: scale[0], slide: updateScale(0), min: -1, max: 1, step: 0.01, precision: 2});
-    webglLessonsUI.setupSlider("#scaleY", {value: scale[1], slide: updateScale(1), min: -1, max: 1, step: 0.01, precision: 2});
-    webglLessonsUI.setupSlider("#scaleZ", {value: scale[2], slide: updateScale(2), min: -1, max: 1, step: 0.01, precision: 2});
-
     // Draw the scene.
     function drawScene()
     {
@@ -283,30 +272,6 @@ async function main()
         gl.uniform1f(u_fudgefactor, 1.0);
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
-    }
-
-    // Handlers da UI
-    function updatePosition(index) {
-        return function(event, ui) {
-            translation[index] = ui.value;
-            drawScene();
-        };
-    }
-
-    function updateRotation(index) {
-        return function(event, ui) {
-            var angleInDegrees = ui.value;
-            var angleInRadians = degToRad(angleInDegrees);
-            rotation[index] = angleInRadians;
-            drawScene();
-        };
-    }
-
-    function updateScale(index) {
-        return function(event, ui) {
-            scale[index] = ui.value;
-            drawScene();
-        };
     }
 }
 
