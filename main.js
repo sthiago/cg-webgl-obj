@@ -20,6 +20,11 @@ const projectionview = mat4.create();
 let tipo_projecao, fovy, aspect, near, far;
 let left, right, bottom, _top;
 
+// Objeto (transformações)
+let rotacao = false;
+const transform = mat4.create();
+const identity = mat4.create();
+
 
 /**
  * Função utilitária que gera números aleatórios baseados numa seed
@@ -359,6 +364,10 @@ function init_controls()
     document.getElementById("top").oninput = update_projection;
     document.getElementById("bottom").oninput = update_projection;
 
+    // Objeto
+    document.getElementById("rotacao").onchange = () => {
+      rotacao = document.getElementById("rotacao").checked;
+    };
 }
 
 
@@ -415,15 +424,7 @@ async function main()
     gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
     load_colors(gl, obj.faces.length, obj.groups);
 
-    // //////////////////////////////////////////////
-
-    // Transform -- É a matriz de transformação do objeto. Pode conter N transformações
-    //              em sequência
-    const transform = mat4.create();
-    // mat4.rotate(transform, transform, degToRad(20), zout);
-    // console.log(transform);
-
-    // ////////////////////////////////////////////////
+    // Mais inicializações de GL
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(1, 1, 1, 1);
     gl.useProgram(program);
@@ -432,10 +433,12 @@ async function main()
     gl.enable(gl.CULL_FACE);
 
     // Draw the scene.
-    drawScene = function()
+    drawScene = function(time)
     {
-        // Configurações iniciais para desenhar a cena
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+        // Rotação do objeto
+        if (rotacao) mat4.rotate(transform, identity, time*0.005, yup);
 
         gl.uniformMatrix4fv(u_modelview, false, modelview);
         gl.uniformMatrix4fv(u_projectionview, false, projectionview);
@@ -443,10 +446,10 @@ async function main()
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
 
-        window.requestAnimationFrame(() => drawScene());
+        window.requestAnimationFrame(drawScene);
     }
 
-    window.requestAnimationFrame(() => drawScene());
+    window.requestAnimationFrame(drawScene);
 }
 
 init();
