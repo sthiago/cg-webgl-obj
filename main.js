@@ -161,6 +161,39 @@ function load_obj(gl, obj)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 }
 
+// Calcula normais e carrega no buffer. Pressupõe que os vértices estão em sentido
+// antihorário.
+function load_normals(gl, obj)
+{
+    const data = [];
+
+    for (const face of obj.faces) {
+        const _face = [];
+        for (const vertice_idx of face.vertices) {
+            const vertice = obj.vertices[vertice_idx];
+            _face.push(vertice);
+        }
+
+        const vertice1 = vec3.fromValues(_face[0].x, _face[0].y, _face[0].z);
+        const vertice2 = vec3.fromValues(_face[1].x, _face[1].y, _face[1].z);
+        const vertice3 = vec3.fromValues(_face[2].x, _face[2].y, _face[2].z);
+
+        const a = vec3.create();
+        const b = vec3.create();
+
+        vec3.subtract(a, vertice2, vertice1);
+        vec3.subtract(b, vertice3, vertice1);
+
+        const normal = vec3.create();
+        vec3.cross(normal, a, b);
+
+        data.push(normal[0], normal[1], normal[2]);
+        data.push(normal[0], normal[1], normal[2]);
+        data.push(normal[0], normal[1], normal[2]);
+    }
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+}
 
 /**
  * Para cada grupo de faces, atribui uma cor aleatória. Se o objeto não tiver grupos,
@@ -283,7 +316,7 @@ function init_projection()
     fovy = 60;
     aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     near = 1;
-    far = 2000;
+    far = 4000;
     mat4.perspective(projectionview, degToRad(fovy), aspect, near, far);
 
     // Inicializa valores da ortográfica também
@@ -406,7 +439,7 @@ function init()
         throw Error("Sem suporte a WebGL 2.0");
     }
 
-    init_camera(10);
+    init_camera(2000);
     init_projection();
     init_controls();
 }
@@ -418,6 +451,7 @@ async function main()
 
     // Configuração de atributos e uniforms
     const a_position = gl.getAttribLocation(program, "a_position");
+    const a_normal = gl.getAttribLocation(program, "a_normal");
     const a_color = gl.getAttribLocation(program, "a_color");
     const u_modelview = gl.getUniformLocation(program, "u_modelview");
     const u_projectionview = gl.getUniformLocation(program, "u_projectionview");
@@ -427,7 +461,7 @@ async function main()
     gl.bindVertexArray(vao);
 
     // Lê arquivo.obj
-    const resp = await fetch("objs/cubo.obj");
+    const resp = await fetch("objs/deer.obj");
     const str = await resp.text();
     const obj = parse_obj(str);
 
@@ -437,6 +471,13 @@ async function main()
     gl.enableVertexAttribArray(a_position);
     gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
     load_obj(gl, obj);
+
+    // Calcula normais e carrega no buffer
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.enableVertexAttribArray(a_normal);
+    gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 0, 0);
+    load_normals(gl, obj);
 
     // Carrega cores no buffer
     const colorBuffer = gl.createBuffer();
