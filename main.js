@@ -25,6 +25,9 @@ let rotacao = false;
 const transform = mat4.create();
 const identity = mat4.create();
 
+let zbuffer = true;
+let facecull = true;
+
 
 /**
  * Função utilitária que gera números aleatórios baseados numa seed
@@ -367,6 +370,24 @@ function init_controls()
     // Objeto
     document.getElementById("rotacao").onchange = () => {
       rotacao = document.getElementById("rotacao").checked;
+    };
+
+    // Outros
+    document.getElementById("zbuffer").onchange = () => {
+        zbuffer = document.getElementById("zbuffer").checked;
+        if (zbuffer) {
+            gl.enable(gl.DEPTH_TEST);
+        } else {
+            gl.disable(gl.DEPTH_TEST);
+        }
+    };
+    document.getElementById("facecull").onchange = () => {
+        facecull = document.getElementById("facecull").checked;
+        if (facecull) {
+            gl.enable(gl.CULL_FACE);
+        } else {
+            gl.disable(gl.CULL_FACE);
+        }
     };
 }
 
