@@ -432,12 +432,12 @@ function init_controls()
 
 function init_light()
 {
-    light_position = vec3.fromValues(3, 4, 5);
+    light_position = vec3.fromValues(-1000, 1000, 1000);
     intensidade = 0.8;
     kd = 0.8;
     intensidade_amb = 0.2;
     ka = 0.2;
-    ke = 0.3;
+    ke = 0.8;
     shininess = 50;
 }
 
@@ -456,7 +456,7 @@ function init()
         throw Error("Sem suporte a WebGL 2.0");
     }
 
-    init_camera(5);
+    init_camera(2000);
     init_projection();
     init_light();
     init_controls();
@@ -477,18 +477,21 @@ async function main()
     const u_transform_invtransp = gl.getUniformLocation(program, "u_transform_invtransp");
 
     // Atributos e uniforms relacionas à iluminação
+    const u_eyeposition = gl.getUniformLocation(program, "u_eyeposition");
     const u_lightposition = gl.getUniformLocation(program, "u_lightposition");
     const u_color = gl.getUniformLocation(program, "u_color");
     const u_kd = gl.getUniformLocation(program, "u_kd");
     const u_intensidade = gl.getUniformLocation(program, "u_intensidade");
     const u_ka = gl.getUniformLocation(program, "u_ka");
     const u_intensidade_amb = gl.getUniformLocation(program, "u_intensidade_amb");
+    const u_ke = gl.getUniformLocation(program, "u_ke");
+    const u_shininess = gl.getUniformLocation(program, "u_shininess");
 
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
 
     // Lê arquivo.obj
-    const resp = await fetch("objs/cubo.obj");
+    const resp = await fetch("objs/deer.obj");
     const str = await resp.text();
     const obj = parse_obj(str);
 
@@ -545,6 +548,8 @@ async function main()
 
         gl.uniformMatrix4fv(u_transform, false, transform);
         gl.uniformMatrix4fv(u_transform_invtransp, false, transform_invtransp);
+
+        gl.uniform3fv(u_eyeposition, eye);
         gl.uniform3fv(u_lightposition, light_position);
         gl.uniform3fv(u_color, [0.2, 1, 0.2]); // green
 
@@ -552,6 +557,8 @@ async function main()
         gl.uniform1f(u_kd, kd);
         gl.uniform1f(u_intensidade_amb, intensidade_amb);
         gl.uniform1f(u_ka, ka);
+        gl.uniform1f(u_shininess, shininess);
+        gl.uniform1f(u_ke, ke);
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
 

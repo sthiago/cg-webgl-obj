@@ -52,6 +52,7 @@
 
         out vec3 v_normal;
         out vec3 v_lightdirection; // vértice -> luz
+        out vec3 v_eyedirection; // vértice -> eye
 
         uniform mat4 u_projectionview;
         uniform mat4 u_modelview;
@@ -59,6 +60,7 @@
         uniform mat4 u_transform_invtransp;
 
         uniform vec3 u_lightposition;
+        uniform vec3 u_eyeposition;
 
         void main() {
             // Projeção do vértice na tela
@@ -70,6 +72,9 @@
 
             // Cálculo do vetor de direção da luz
             v_lightdirection = u_lightposition - (u_transform * vec4(a_position, 1)).xyz;
+
+            // Cálculo do vetor de direção do eye
+            v_eyedirection = u_eyeposition - (u_transform * vec4(a_position, 1)).xyz;
         }
     </script>
 
@@ -78,12 +83,15 @@
 
         in vec3 v_normal;
         in vec3 v_lightdirection;
+        in vec3 v_eyedirection;
 
         uniform vec3 u_color;
         uniform float u_kd;
         uniform float u_intensidade;
         uniform float u_ka;
         uniform float u_intensidade_amb;
+        uniform float u_ke;
+        uniform float u_shininess;
 
         out vec4 outColor; // a cor de saída
 
@@ -99,8 +107,18 @@
             float diffuse = u_intensidade * u_kd * dot(normal, lightdirection);
             vec3 diffuse_comp = u_color * diffuse;
 
-            vec3 color = ambient_comp + diffuse_comp;
+            // Componente especular
+            vec3 eyedirection = normalize(v_eyedirection);
+            vec3 halfVector = normalize(v_eyedirection + v_lightdirection);
+            float specular = 0.0;
 
+            if (dot(normal, halfVector) > 0.0) {
+                specular = u_intensidade * u_ke * pow(dot(normal, halfVector), u_shininess);
+            }
+
+            vec3 specular_comp = u_color * specular;
+
+            vec3 color = ambient_comp + diffuse_comp + specular_comp;
             outColor = vec4(color, 1.0);
         }
     </script>
