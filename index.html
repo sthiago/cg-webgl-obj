@@ -149,11 +149,16 @@
         <div class="control"><input type="checkbox" id="facecull" checked> Face culling</div>
         <div class="control"><input type="checkbox" id="rotacao"> Rotação</div>
     </div>
-
+    <div id="controls">
+        Normais:
+        <div class="control"><input type="radio" name="normais" value="calcular" id="radio_calc_norm" checked> Calcular normais</div>
+        <div class="control"><input type="radio" name="normais" value="usar" id="radio_usar_norm"> Usar normais do .OBJ</div>
+    </div>
     <div class="clearfix"></div>
 
     <script src="initShaders.js"></script>
     <script src="gl-matrix.js"></script>
+    <script src="m4.js"></script>
     <script src="main.js"></script>
 </body>
 </html>

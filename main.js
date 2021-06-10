@@ -37,6 +37,8 @@ let facecull = true;
 let light_position;
 let intensidade, kd, ke, shininess;
 let intensidade_amb, ka;
+let calculate_normals = true;
+let normals_available = false;
 
 
 /**
@@ -171,12 +173,31 @@ function load_obj(obj)
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 }
 
-// Calcula normais e carrega no buffer. Pressupõe que os vértices estão em sentido
-// antihorário.
+// Calcula normais (se necessário) e carrega no buffer. Pressupõe que os vértices estão
+// em sentido antihorário.
 function load_normals(obj)
 {
     const data = [];
 
+    if (obj.normals.length > 0 && obj.normals.length == obj.vertices.length) {
+        normals_available = true;
+    }
+
+    // Verifica se existem normais e se a quantidade é igual ao número de vértices.
+    // Verifica também se não está marcado para calcular normais
+    if (!calculate_normals && obj.normals.length > 0 && obj.normals.length == obj.vertices.length) {
+
+        for (const face of obj.faces) {
+            for (const vertice_idx of face.vertices) {
+                const normal = obj.normals[vertice_idx];
+                data.push(normal.x, normal.y, normal.z);
+            }
+        }
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+        return;
+    }
+
+    // Caso não exista, calcula normais
     for (const face of obj.faces) {
         const _face = [];
         for (const vertice_idx of face.vertices) {
@@ -439,6 +460,23 @@ function init_controls()
             gl.disable(gl.CULL_FACE);
         }
     };
+
+    // Normais
+    document.getElementById("radio_calc_norm").checked = calculate_normals;
+    document.getElementById("radio_usar_norm").checked = !calculate_normals;
+
+    document.getElementById("radio_calc_norm").onchange = () => {
+        calculate_normals = document.getElementById("radio_calc_norm").checked;
+        load_normals(obj);
+    }
+    document.getElementById("radio_usar_norm").onchange = () => {
+        calculate_normals = document.getElementById("radio_calc_norm").checked;
+        load_normals(obj);
+    }
+
+    if (!normals_available) {
+        document.getElementById("radio_usar_norm").disabled = true;
+    }
 }
 
 function init_light()
@@ -455,7 +493,7 @@ function init_light()
 async function init_obj()
 {
     // Lê arquivo.obj
-    const resp = await fetch("objs/deer.obj");
+    const resp = await fetch("objs/teapot.obj");
     const str = await resp.text();
     obj = parse_obj(str);
 
@@ -544,7 +582,6 @@ async function main()
     // Posiciona câmera a uma distância adequada do objeto
     const d = bbox.dimensoes.altura / (2 * Math.tan(degToRad(fovy/2)))
     init_camera(2 * d);
-    console.log(d, bbox)
 
     // Deixa o zNear = 1, mas atualiza o zFar para pelo menos caber o objeto
     far = Math.min(4000, bbox.dimensoes.largura);
