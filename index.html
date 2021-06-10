@@ -49,24 +49,19 @@
     <script id="vs" type="x-shader/x-vertex"># version 300 es
         in vec3 a_position;
         in vec3 a_normal;
-        in vec3 a_color;
 
-        out vec3 v_color;
         out vec3 v_normal;
 
-        uniform mat4 u_modelview;
         uniform mat4 u_projectionview;
+        uniform mat4 u_modelview;
         uniform mat4 u_transform;
+        uniform mat4 u_transform_invtransp;
 
         void main() {
             vec4 position = u_projectionview * u_modelview * u_transform * vec4(a_position, 1.0);
             gl_Position = position;
 
-            // Passa a cor direto pro fragment shader
-            v_color = a_color;
-
-            // Passa a normal do ponto para o fs
-            v_normal = a_normal;
+            v_normal = mat3(u_transform_invtransp) * a_normal;
         }
     </script>
 
@@ -74,18 +69,20 @@
         precision highp float;
 
         in vec3 v_normal;
-        in vec3 v_color; // recebe a cor do vertex shader, em vez de de um uniform
+
+        uniform vec3 u_color;
+        uniform vec3 u_light_direction;
+
         out vec4 outColor; // a cor de saída
 
         void main() {
             vec3 normal = normalize(v_normal);
-            vec3 light_direction = normalize(vec3(1.0, -1.0, -1.0));
-            vec3 light_color = vec3(1.0, 1.0, 1.0);
-            float ii = 2.0;
-            float kd = 0.5;
-            vec3 diffuse_comp = light_color.rgb * (dot(light_direction, normal) * kd * ii);
+            vec3 lightdir = normalize(u_light_direction);
 
-            outColor = vec4(diffuse_comp.rgb * v_color, 1.0);
+            float light = dot(normal, lightdir);
+            vec3 color = u_color * light;
+
+            outColor = vec4(color, 1.0);
         }
     </script>
     <canvas id="canvas" width="600" height="400"></canvas>
@@ -103,9 +100,9 @@
         <div class="control">top: <input type="range" id="top" min="-100" max="100" step="1"><span id="top_val"> 0</span></div>
 
         <br> Eye:
-        <div class="control">dx: <input type="range" id="xeye" min="-100" max="100" step="0.01"><span id="xeye_val"> 0</span></div>
-        <div class="control">dy: <input type="range" id="yeye" min="-100" max="100" step="0.01"><span id="yeye_val"> 0</span></div>
-        <div class="control">dz: <input type="range" id="zeye" min="-100" max="100" step="0.01"><span id="zeye_val"> 0</span></div>
+        <div class="control">dx: <input type="range" id="xeye" min="-1000" max="1000" step="0.01"><span id="xeye_val"> 0</span></div>
+        <div class="control">dy: <input type="range" id="yeye" min="-1000" max="1000" step="0.01"><span id="yeye_val"> 0</span></div>
+        <div class="control">dz: <input type="range" id="zeye" min="-1000" max="1000" step="0.01"><span id="zeye_val"> 0</span></div>
         <div class="control">rx: <input type="range" id="rxeye" min="-180" max="180" step="0.1"><span id="rxeye_val"> 0</span></div>
         <div class="control">ry: <input type="range" id="ryeye" min="-180" max="180" step="0.1"><span id="ryeye_val"> 0</span></div>
         <div class="control">rz: <input type="range" id="rzeye" min="-180" max="180" step="0.1"><span id="rzeye_val"> 0</span></div>

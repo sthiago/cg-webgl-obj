@@ -147,7 +147,7 @@ function parse_obj(str)
 
 
 /* Carrega os vértices de um .OBJ no buffer */
-function load_obj(gl, obj)
+function load_obj(obj)
 {
     const data = [];
 
@@ -163,7 +163,7 @@ function load_obj(gl, obj)
 
 // Calcula normais e carrega no buffer. Pressupõe que os vértices estão em sentido
 // antihorário.
-function load_normals(gl, obj)
+function load_normals(obj)
 {
     const data = [];
 
@@ -262,7 +262,8 @@ function find_center(vertices) {
 function init_camera(distance)
 {
     // Eye: Posição da câmera sintética
-    eye = vec3.fromValues(0, 0, distance);
+    // eye = vec3.fromValues(2, 3, 4);
+    eye = vec3.fromValues(0, 3, distance);
 
     // ModelView: Orientação da câmera sintética
     mat4.lookAt(modelview, eye, target, yup);
@@ -439,7 +440,7 @@ function init()
         throw Error("Sem suporte a WebGL 2.0");
     }
 
-    init_camera(2000);
+    init_camera(5);
     init_projection();
     init_controls();
 }
@@ -452,16 +453,20 @@ async function main()
     // Configuração de atributos e uniforms
     const a_position = gl.getAttribLocation(program, "a_position");
     const a_normal = gl.getAttribLocation(program, "a_normal");
-    const a_color = gl.getAttribLocation(program, "a_color");
+    // const a_color = gl.getAttribLocation(program, "a_color");
     const u_modelview = gl.getUniformLocation(program, "u_modelview");
     const u_projectionview = gl.getUniformLocation(program, "u_projectionview");
     const u_transform = gl.getUniformLocation(program, "u_transform");
+    const u_transform_invtransp = gl.getUniformLocation(program, "u_transform_invtransp");
+    // const u_light_position = gl.getUniformLocation(program, "u_light_position");
+    const u_light_direction = gl.getUniformLocation(program, "u_light_direction");
+    const u_color = gl.getUniformLocation(program, "u_color");
 
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
 
     // Lê arquivo.obj
-    const resp = await fetch("objs/deer.obj");
+    const resp = await fetch("objs/cubo.obj");
     const str = await resp.text();
     const obj = parse_obj(str);
 
@@ -470,21 +475,21 @@ async function main()
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.enableVertexAttribArray(a_position);
     gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
-    load_obj(gl, obj);
+    load_obj(obj);
 
     // Calcula normais e carrega no buffer
     const normalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.enableVertexAttribArray(a_normal);
     gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 0, 0);
-    load_normals(gl, obj);
+    load_normals(obj);
 
     // Carrega cores no buffer
-    const colorBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    gl.enableVertexAttribArray(a_color);
-    gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
-    load_colors(gl, obj.faces.length, obj.groups);
+    // const colorBuffer = gl.createBuffer();
+    // gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    // gl.enableVertexAttribArray(a_color);
+    // gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
+    // load_colors(gl, obj.faces.length, obj.groups);
 
     // Mais inicializações de GL
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -494,17 +499,32 @@ async function main()
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
 
+    let initial_transform = mat4.create();
+    mat4.translate(transform, transform, vec3.fromValues(-0.5, -0.5, -0.5));
+
     // Draw the scene.
     drawScene = function(time)
     {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         // Rotação do objeto
-        if (rotacao) mat4.rotate(transform, identity, time*0.005, yup);
+        if (rotacao) {
+            mat4.rotate(transform, initial_transform, time*0.002, yup);
+            mat4.translate(transform, transform, vec3.fromValues(-0.5, -0.5, -0.5));
+        }
 
-        gl.uniformMatrix4fv(u_modelview, false, modelview);
         gl.uniformMatrix4fv(u_projectionview, false, projectionview);
+        gl.uniformMatrix4fv(u_modelview, false, modelview);
         gl.uniformMatrix4fv(u_transform, false, transform);
+
+        const transform_invtransp = mat4.create();
+        mat4.invert(transform_invtransp, transform);
+        mat4.transpose(transform_invtransp, transform_invtransp);
+
+        gl.uniformMatrix4fv(u_transform, false, transform);
+        gl.uniformMatrix4fv(u_transform_invtransp, false, transform_invtransp);
+        gl.uniform3fv(u_light_direction, [0.5, 0.7, 1]);
+        gl.uniform3f(u_color, 0.2, 1, 0.2); // green
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
 
