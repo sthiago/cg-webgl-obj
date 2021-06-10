@@ -51,17 +51,25 @@
         in vec3 a_normal;
 
         out vec3 v_normal;
+        out vec3 v_lightdirection; // vértice -> luz
 
         uniform mat4 u_projectionview;
         uniform mat4 u_modelview;
         uniform mat4 u_transform;
         uniform mat4 u_transform_invtransp;
 
+        uniform vec3 u_lightposition;
+
         void main() {
+            // Projeção do vértice na tela
             vec4 position = u_projectionview * u_modelview * u_transform * vec4(a_position, 1.0);
             gl_Position = position;
 
+            // Correção da normal do vértice
             v_normal = mat3(u_transform_invtransp) * a_normal;
+
+            // Cálculo do vetor de direção da luz
+            v_lightdirection = u_lightposition - (u_transform * vec4(a_position, 1)).xyz;
         }
     </script>
 
@@ -69,18 +77,22 @@
         precision highp float;
 
         in vec3 v_normal;
+        in vec3 v_lightdirection;
 
         uniform vec3 u_color;
-        uniform vec3 u_light_direction;
+        uniform float u_kd;
+        uniform float u_intensidade;
 
         out vec4 outColor; // a cor de saída
 
         void main() {
             vec3 normal = normalize(v_normal);
-            vec3 lightdir = normalize(u_light_direction);
+            vec3 lightdirection = normalize(v_lightdirection);
 
-            float light = dot(normal, lightdir);
-            vec3 color = u_color * light;
+            float diffuse = u_intensidade * u_kd * dot(normal, lightdirection);
+            vec3 diffuse_comp = u_color * diffuse;
+
+            vec3 color = diffuse_comp;
 
             outColor = vec4(color, 1.0);
         }

@@ -28,6 +28,10 @@ const identity = mat4.create();
 let zbuffer = true;
 let facecull = true;
 
+// Iluminação
+let light_position;
+let kd;
+let intensidade;
 
 /**
  * Função utilitária que gera números aleatórios baseados numa seed
@@ -263,7 +267,7 @@ function init_camera(distance)
 {
     // Eye: Posição da câmera sintética
     // eye = vec3.fromValues(2, 3, 4);
-    eye = vec3.fromValues(0, 3, distance);
+    eye = vec3.fromValues(2, 3, distance);
 
     // ModelView: Orientação da câmera sintética
     mat4.lookAt(modelview, eye, target, yup);
@@ -425,6 +429,13 @@ function init_controls()
     };
 }
 
+function init_light()
+{
+    light_position = vec3.fromValues(3, 4, 5);
+    intensidade = 0.8;
+    kd = 0.8;
+}
+
 
 // Função de inicialização geral
 function init()
@@ -442,6 +453,7 @@ function init()
 
     init_camera(5);
     init_projection();
+    init_light();
     init_controls();
 }
 
@@ -458,9 +470,12 @@ async function main()
     const u_projectionview = gl.getUniformLocation(program, "u_projectionview");
     const u_transform = gl.getUniformLocation(program, "u_transform");
     const u_transform_invtransp = gl.getUniformLocation(program, "u_transform_invtransp");
-    // const u_light_position = gl.getUniformLocation(program, "u_light_position");
-    const u_light_direction = gl.getUniformLocation(program, "u_light_direction");
+
+    // Atributos e uniforms relacionas à iluminação
+    const u_lightposition = gl.getUniformLocation(program, "u_lightposition");
     const u_color = gl.getUniformLocation(program, "u_color");
+    const u_kd = gl.getUniformLocation(program, "u_kd");
+    const u_intensidade = gl.getUniformLocation(program, "u_intensidade");
 
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
@@ -523,8 +538,11 @@ async function main()
 
         gl.uniformMatrix4fv(u_transform, false, transform);
         gl.uniformMatrix4fv(u_transform_invtransp, false, transform_invtransp);
-        gl.uniform3fv(u_light_direction, [0.5, 0.7, 1]);
-        gl.uniform3f(u_color, 0.2, 1, 0.2); // green
+        gl.uniform3fv(u_lightposition, light_position);
+        gl.uniform3fv(u_color, [0.2, 1, 0.2]); // green
+
+        gl.uniform1f(u_intensidade, intensidade);
+        gl.uniform1f(u_kd, kd);
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
 
