@@ -82,17 +82,24 @@
         uniform vec3 u_color;
         uniform float u_kd;
         uniform float u_intensidade;
+        uniform float u_ka;
+        uniform float u_intensidade_amb;
 
         out vec4 outColor; // a cor de saída
 
         void main() {
             vec3 normal = normalize(v_normal);
-            vec3 lightdirection = normalize(v_lightdirection);
 
+            // Componente ambiente
+            float ambient = u_intensidade_amb * u_ka;
+            vec3 ambient_comp = u_color * ambient;
+
+            // Componente difusa
+            vec3 lightdirection = normalize(v_lightdirection);
             float diffuse = u_intensidade * u_kd * dot(normal, lightdirection);
             vec3 diffuse_comp = u_color * diffuse;
 
-            vec3 color = diffuse_comp;
+            vec3 color = ambient_comp + diffuse_comp;
 
             outColor = vec4(color, 1.0);
         }

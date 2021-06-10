@@ -30,8 +30,9 @@ let facecull = true;
 
 // Iluminação
 let light_position;
-let kd;
-let intensidade;
+let intensidade, kd, ke, shininess;
+let intensidade_amb, ka;
+
 
 /**
  * Função utilitária que gera números aleatórios baseados numa seed
@@ -434,6 +435,10 @@ function init_light()
     light_position = vec3.fromValues(3, 4, 5);
     intensidade = 0.8;
     kd = 0.8;
+    intensidade_amb = 0.2;
+    ka = 0.2;
+    ke = 0.3;
+    shininess = 50;
 }
 
 
@@ -476,6 +481,8 @@ async function main()
     const u_color = gl.getUniformLocation(program, "u_color");
     const u_kd = gl.getUniformLocation(program, "u_kd");
     const u_intensidade = gl.getUniformLocation(program, "u_intensidade");
+    const u_ka = gl.getUniformLocation(program, "u_ka");
+    const u_intensidade_amb = gl.getUniformLocation(program, "u_intensidade_amb");
 
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
@@ -543,6 +550,8 @@ async function main()
 
         gl.uniform1f(u_intensidade, intensidade);
         gl.uniform1f(u_kd, kd);
+        gl.uniform1f(u_intensidade_amb, intensidade_amb);
+        gl.uniform1f(u_ka, ka);
 
         gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
 
