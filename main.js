@@ -111,8 +111,8 @@ function parse_obj(str)
 
             // Suporta apenas faces com 3 vértices (triângulos)
             if (valores.length != 4) {
-                console.log("Arquivo .OBJ não suportado");
                 console.log(valores);
+                alert("Arquivo .OBJ não suportado");
             }
 
             // Adiciona os vértices à face
@@ -416,8 +416,35 @@ function update_projection()
     }
 }
 
+
+function update_light()
+{
+    intensidade_amb = parseFloat(document.getElementById("int_ambiente").value);
+    ka = parseFloat(document.getElementById("ka").value);
+    intensidade = parseFloat(document.getElementById("intensidade").value);
+    kd = parseFloat(document.getElementById("kd").value);
+    ke = parseFloat(document.getElementById("ke").value);
+    shininess = parseFloat(document.getElementById("shininess").value);
+
+    document.getElementById("int_ambiente_val").textContent = intensidade_amb;
+    document.getElementById("ka_val").textContent = ka;
+    document.getElementById("intensidade_val").textContent = intensidade;
+    document.getElementById("kd_val").textContent = kd;
+    document.getElementById("ke_val").textContent = ke;
+    document.getElementById("shininess_val").textContent = shininess;
+}
+
+
 function init_controls()
 {
+    // Luz
+    document.getElementById("int_ambiente").oninput = update_light;
+    document.getElementById("ka").oninput = update_light;
+    document.getElementById("intensidade").oninput = update_light;
+    document.getElementById("kd").oninput = update_light;
+    document.getElementById("ke").oninput = update_light;
+    document.getElementById("shininess").oninput = update_light;
+
     // Posição e orientação da câmera
     document.getElementById("xeye").oninput = update_camera;
     document.getElementById("yeye").oninput = update_camera;

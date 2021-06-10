@@ -43,6 +43,15 @@
             margin-bottom: 8px;
         }
 
+        .label1 {
+            display: inline-block;
+            width: 60px;
+        }
+
+        .label2 {
+            display: inline-block;
+            width: 120px;
+        }
     </style>
 </head>
 <body>
@@ -128,13 +137,13 @@
         Projeção:
         <div class="control"><input type="radio" name="projecao" value="perspectiva" id="radio_persp"> Perspectiva</div>
         <div class="control"><input type="radio" name="projecao" value="ortografica" id="radio_ortho"> Ortográfica</div>
-        <div class="control">near: <input type="range" id="near" min="1" max="2000" step="0.1"><span id="near_val"> 0</span></div>
-        <div class="control">far: <input type="range" id="far" min="1" max="4000" step="0.1"><span id="far_val"> 0</span></div>
-        <div class="control">fov(y): <input type="range" id="fovy" min="1" max="90" step="1"><span id="fovy_val"> 0</span></div>
-        <div class="control">left: <input type="range" id="left" min="-100" max="100" step="1"><span id="left_val"> 0</span></div>
-        <div class="control">right: <input type="range" id="right" min="-100" max="100" step="1"><span id="right_val"> 0</span></div>
-        <div class="control">bottom: <input type="range" id="bottom" min="-100" max="100" step="1"><span id="bottom_val"> 0</span></div>
-        <div class="control">top: <input type="range" id="top" min="-100" max="100" step="1"><span id="top_val"> 0</span></div>
+        <div class="control"><span class="label1">near:</span> <input type="range" id="near" min="1" max="2000" step="0.1"><span id="near_val"> 0</span></div>
+        <div class="control"><span class="label1">far:</span> <input type="range" id="far" min="1" max="4000" step="0.1"><span id="far_val"> 0</span></div>
+        <div class="control"><span class="label1">fov(y):</span> <input type="range" id="fovy" min="1" max="90" step="1"><span id="fovy_val"> 0</span></div>
+        <div class="control"><span class="label1">left:</span> <input type="range" id="left" min="-100" max="100" step="1"><span id="left_val"> 0</span></div>
+        <div class="control"><span class="label1">right:</span> <input type="range" id="right" min="-100" max="100" step="1"><span id="right_val"> 0</span></div>
+        <div class="control"><span class="label1">bottom:</span> <input type="range" id="bottom" min="-100" max="100" step="1"><span id="bottom_val"> 0</span></div>
+        <div class="control"><span class="label1">top:</span> <input type="range" id="top" min="-100" max="100" step="1"><span id="top_val"> 0</span></div>
 
         <br> Eye:
         <div class="control">dx: <input type="range" id="xeye" min="-1000" max="1000" step="0.01"><span id="xeye_val"> 0</span></div>
@@ -153,6 +162,14 @@
         Normais:
         <div class="control"><input type="radio" name="normais" value="calcular" id="radio_calc_norm" checked> Calcular normais</div>
         <div class="control"><input type="radio" name="normais" value="usar" id="radio_usar_norm"> Usar normais do .OBJ</div>
+
+        <br> Luz:
+        <div class="control"><span class="label2"> Int. Ambiente: </span><input type="range" id="int_ambiente" min="0" max="1" step="0.01"><span id="int_ambiente_val"> 0</span></div>
+        <div class="control"><span class="label2"> Ka: </span><input type="range" id="ka" min="0" max="1" step="0.01"><span id="ka_val"> 0</span></div>
+        <div class="control"><span class="label2"> Intensidade: </span><input type="range" id="intensidade" min="0" max="1" step="0.01"><span id="intensidade_val"> 0</span></div>
+        <div class="control"><span class="label2"> Kd: </span><input type="range" id="kd" min="0" max="1" step="0.01"><span id="kd_val"> 0</span></div>
+        <div class="control"><span class="label2"> Ke: </span><input type="range" id="ke" min="0" max="1" step="0.01"><span id="ke_val"> 0</span></div>
+        <div class="control"><span class="label2"> Shininess: </span><input type="range" id="shininess" min="0" max="250" step="1"><span id="shininess_val"> 0</span></div>
     </div>
     <div class="clearfix"></div>
 
