@@ -8,6 +8,11 @@ const zout = vec3.fromValues(0, 0, 1);
 let gl;
 let drawScene;
 
+// Objeto
+let obj;
+let reposition_vector;
+let bbox;
+
 // Câmera sintética
 let eye;
 let target = origin;
@@ -232,8 +237,8 @@ function load_colors(gl, n_faces, groups)
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(data), gl.STATIC_DRAW);
 }
 
-// Encontra centro da bounding box dos vértices
-function find_center(vertices) {
+// Encontra bounding box dos vértices
+function find_bbox(vertices) {
     let [ xmax, xmin ] = [ vertices[0].x, vertices[0].x ];
     let [ ymax, ymin ] = [ vertices[0].y, vertices[0].y ];
     let [ zmax, zmin ] = [ vertices[0].z, vertices[0].z ];
@@ -252,12 +257,16 @@ function find_center(vertices) {
     const yc = (ymax + ymin)/2;
     const zc = (zmax + zmin)/2;
 
+    const altura = ymax - ymin;
+    const largura = xmax - xmin;
+    const profundidade = zmax - zmin;
+
     const rv = {
         centro: { xc, yc, zc },
+        dimensoes: { altura, largura, profundidade },
         max: { x: xmax, y: ymax, z: zmax },
         min: { x: xmin, y: ymin, z: zmin }
     };
-    // console.log(rv);
 
     return rv;
 }
@@ -267,8 +276,7 @@ function find_center(vertices) {
 function init_camera(distance)
 {
     // Eye: Posição da câmera sintética
-    // eye = vec3.fromValues(2, 3, 4);
-    eye = vec3.fromValues(2, 3, distance);
+    eye = vec3.fromValues(0, 0, distance);
 
     // ModelView: Orientação da câmera sintética
     mat4.lookAt(modelview, eye, target, yup);
@@ -433,21 +441,31 @@ function init_controls()
 function init_light()
 {
     light_position = vec3.fromValues(-1000, 1000, 1000);
-    intensidade = 0.8;
+    intensidade = 0.9;
     kd = 0.8;
     intensidade_amb = 0.2;
     ka = 0.2;
-    ke = 0.8;
+    ke = 0.9;
     shininess = 50;
 }
 
-
-// Função de inicialização geral
-function init()
+async function init_obj()
 {
+    // Lê arquivo.obj
+    const resp = await fetch("objs/deer.obj");
+    const str = await resp.text();
+    obj = parse_obj(str);
+
+    // Encontra bbox do objeto
+    bbox = find_bbox(obj.vertices);
+    reposition_vector = vec3.fromValues(-bbox.centro.xc, -bbox.centro.yc, -bbox.centro.zc);
+}
+
+async function main()
+{
+    // Inicializações em geral
     seed = 1;
 
-    // Inicializa contexto WebGL2
     const canvas = document.querySelector("#canvas");
     gl = canvas.getContext("webgl2");
 
@@ -456,15 +474,11 @@ function init()
         throw Error("Sem suporte a WebGL 2.0");
     }
 
-    init_camera(2000);
+    await init_obj();
     init_projection();
     init_light();
-    init_controls();
-}
 
 
-async function main()
-{
     const program = initShaders(gl, "vs", "fs");
 
     // Configuração de atributos e uniforms
@@ -489,11 +503,6 @@ async function main()
 
     const vao = gl.createVertexArray();
     gl.bindVertexArray(vao);
-
-    // Lê arquivo.obj
-    const resp = await fetch("objs/deer.obj");
-    const str = await resp.text();
-    const obj = parse_obj(str);
 
     // Carrega vértices no buffer
     const positionBuffer = gl.createBuffer();
@@ -525,7 +534,27 @@ async function main()
     gl.enable(gl.CULL_FACE);
 
     let initial_transform = mat4.create();
-    mat4.translate(transform, transform, vec3.fromValues(-0.5, -0.5, -0.5));
+
+    // Coloca o centro da bbox do objeto na origem
+    mat4.translate(transform, transform, reposition_vector);
+
+    // Posiciona câmera a uma distância adequada do objeto
+    const d = bbox.dimensoes.altura / (2 * Math.tan(degToRad(fovy/2)))
+    init_camera(2 * d);
+    console.log(d, bbox)
+
+    // Deixa o zNear = 1, mas atualiza o zFar para pelo menos caber o objeto
+    far = Math.min(4000, bbox.dimensoes.largura);
+
+    // Posiciona a luz em um dos cantos da bbox ligeiramente expandida
+    light_position = vec3.fromValues(
+        -1.5 * bbox.dimensoes.largura/2,
+        1.5 * bbox.dimensoes.altura/2,
+        1.5 * bbox.dimensoes.profundidade/2,
+    );
+
+    // Inicializa os controles só agora, pra usar ranges que fazem sentido
+    init_controls();
 
     // Draw the scene.
     drawScene = function(time)
@@ -535,7 +564,7 @@ async function main()
         // Rotação do objeto
         if (rotacao) {
             mat4.rotate(transform, initial_transform, time*0.002, yup);
-            mat4.translate(transform, transform, vec3.fromValues(-0.5, -0.5, -0.5));
+            mat4.translate(transform, transform, reposition_vector);
         }
 
         gl.uniformMatrix4fv(u_projectionview, false, projectionview);
@@ -568,5 +597,5 @@ async function main()
     window.requestAnimationFrame(drawScene);
 }
 
-init();
+
 main();
