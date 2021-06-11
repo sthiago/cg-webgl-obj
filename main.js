@@ -135,43 +135,92 @@ function parse_obj(str)
             const valores = l.split(" ").filter(v => v != "");
             group_count += 1;
 
-            // Suporta apenas faces com 3 vértices (triângulos)
-            if (valores.length != 4) {
+            // Suporta apenas faces com 3 ou 4 vértices (triângulos)
+            if (valores.length != 4 && valores.length != 5 ) {
                 console.log(valores);
                 alert("Arquivo .OBJ não suportado");
+                return;
             }
 
-            // Adiciona os vértices à face
-            const f = { vertices: [], normals: [] };
-            for (const valor of valores.slice(1)) {
-                // Tenta splitar o valor em "/" pra saber se tem textcoords e normais
-                const splitted = valor.split("/");
-                let vertice_idx, normal_idx;
-                if (splitted.length == 3) {
-                    vertice_idx = parseInt(splitted[0]);
-                    normal_idx = parseInt(splitted[2]);
+            // Lida com triângulos
+            if (valores.length == 4) {
+                // Adiciona os vértices à face
+                const f = { vertices: [], normals: [] };
+                for (const valor of valores.slice(1)) {
+                    // Tenta splitar o valor em "/" pra saber se tem textcoords e normais
+                    const splitted = valor.split("/");
+                    let vertice_idx, normal_idx;
+                    if (splitted.length == 3) {
+                        vertice_idx = parseInt(splitted[0]);
+                        normal_idx = parseInt(splitted[2]);
 
-                    // Resolve referências negativas
-                    if (vertice_idx < 0) {
-                        vertice_idx = vertices.length + vertice_idx;
-                    } else {
-                        vertice_idx = vertice_idx - 1;
+                        // Resolve referências negativas
+                        if (vertice_idx < 0) {
+                            vertice_idx = vertices.length + vertice_idx;
+                        } else {
+                            vertice_idx = vertice_idx - 1;
+                        }
+
+                        if (normal_idx < 0) {
+                            normal_idx = normals.length + normal_idx;
+                        } else {
+                            normal_idx = normal_idx - 1;
+                        }
+                    } else if (splitted.length == 1 || splitted.length == 2) {
+                        vertice_idx = parseInt(splitted[0]) - 1;
                     }
 
-                    if (normal_idx < 0) {
-                        normal_idx = normals.length + normal_idx;
-                    } else {
-                        normal_idx = normal_idx - 1;
-                    }
-                } else if (splitted.length == 1 || splitted.length == 2) {
-                    vertice_idx = parseInt(splitted[0]) - 1;
+                    // Adiciona vértice/normal à face
+                    f.vertices.push(vertice_idx);
+                    f.normals.push(normal_idx);
                 }
-
-                // Adiciona vértice/normal à face
-                f.vertices.push(vertice_idx);
-                f.normals.push(normal_idx);
+                faces.push(f);
             }
-            faces.push(f);
+
+            // Lida com quadriláteros -- supõe que estão em sentido antihorário
+            if (valores.length == 5) {
+                // Adiciona os vértices à face
+                const f = { vertices: [], normals: [] };
+
+                for (const valor of valores.slice(1)) {
+                    // Tenta splitar o valor em "/" pra saber se tem textcoords e normais
+                    const splitted = valor.split("/");
+                    let vertice_idx, normal_idx;
+                    if (splitted.length == 3) {
+                        vertice_idx = parseInt(splitted[0]);
+                        normal_idx = parseInt(splitted[2]);
+
+                        // Resolve referências negativas
+                        if (vertice_idx < 0) {
+                            vertice_idx = vertices.length + vertice_idx;
+                        } else {
+                            vertice_idx = vertice_idx - 1;
+                        }
+
+                        if (normal_idx < 0) {
+                            normal_idx = normals.length + normal_idx;
+                        } else {
+                            normal_idx = normal_idx - 1;
+                        }
+                    } else if (splitted.length == 1 || splitted.length == 2) {
+                        vertice_idx = parseInt(splitted[0]) - 1;
+                    }
+
+                    // Adiciona vértice/normal à face
+                    f.vertices.push(vertice_idx);
+                    f.normals.push(normal_idx);
+                }
+                f1 = {
+                    vertices: [ f.vertices[0], f.vertices[1], f.vertices[2] ],
+                    normals: [ f.normals[0], f.normals[1], f.normals[2] ]
+                };
+                f2 = {
+                    vertices: [ f.vertices[0], f.vertices[2], f.vertices[3] ],
+                    normals: [ f.normals[0], f.normals[2], f.normals[3] ]
+                };
+                faces.push(f1);
+                faces.push(f2);
+            }
         }
     }
 
