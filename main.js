@@ -587,6 +587,45 @@ function init_controls()
         normals_available = false;
 
         document.getElementById("radio_usar_norm").disabled = false;
+
+        // Controls
+        document.getElementById("radio_persp").checked = true;
+        document.getElementById("near").value = near;
+        document.getElementById("near_val").textContent = near;
+
+        document.getElementById("far").value = far;
+        document.getElementById("far_val").textContent = far;
+
+        document.getElementById("fovy").value = fovy;
+        document.getElementById("fovy_val").textContent = fovy;
+
+        document.getElementById("left").value = left;
+        document.getElementById("left_val").textContent = left;
+        document.getElementById("right").value = right;
+        document.getElementById("right_val").textContent = right;
+        document.getElementById("top").value = _top;
+        document.getElementById("top_val").textContent = _top;
+        document.getElementById("bottom").value = bottom;
+        document.getElementById("bottom_val").textContent = bottom;
+
+
+        document.getElementById("xeye_val").textContent = eye_dx;
+        document.getElementById("yeye_val").textContent = eye_dy;
+        document.getElementById("zeye_val").textContent = eye_dz;
+        document.getElementById("rxeye_val").textContent = eye_rx;
+        document.getElementById("ryeye_val").textContent = eye_ry;
+        document.getElementById("rzeye_val").textContent = eye_rz;
+
+        document.getElementById("xeye").value = eye_dx;
+        document.getElementById("yeye").value = eye_dy;
+        document.getElementById("zeye").value = eye_dz;
+        document.getElementById("rxeye").value = eye_rx;
+        document.getElementById("ryeye").value = eye_ry;
+        document.getElementById("rzeye").value = eye_rz;
+
+        document.getElementById("rotacao").checked = rotacao;
+        document.getElementById("zbuffer").checked = zbuffer;
+        document.getElementById("facecull").checked = facecull;
     };
 
     document.getElementById("obj_lista").onchange = () => {
@@ -663,7 +702,7 @@ async function main(internal=true, file_contents)
         throw Error("Sem suporte a WebGL 2.0");
     }
 
-    init_controls();
+    // init_controls();
     if (internal && window.location.protocol != "file:") {
         await init_obj();
     } else if (file_contents != undefined) {
