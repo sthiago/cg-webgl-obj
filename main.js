@@ -47,14 +47,35 @@ let normals_available = false;
 
 
 /**
- * Função utilitária que gera números aleatórios baseados numa seed
- * Fonte: https://stackoverflow.com/a/19303725/1694726
- */
+* Função utilitária que gera números aleatórios baseados numa seed
+* Fonte: https://stackoverflow.com/a/19303725/1694726
+*/
 let seed = 1;
 function random() {
     var x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
 }
+
+/*
+* Função utilitária para ler um arquivo como string
+* Fonte: https://stackoverflow.com/q/19842314/1694726
+*/
+function readSingleFile(evt, callback) {
+    //Retrieve the first (and only!) File from the FileList object
+    var f = evt.target.files[0];
+
+    if (f) {
+        var r = new FileReader();
+        r.onload = function(e) {
+            var contents = e.target.result;
+            callback(contents);
+        }
+        r.readAsText(f);
+    } else {
+        alert("Failed to load file");
+    }
+}
+
 
 
 // Utilitários
@@ -234,9 +255,9 @@ function load_normals(obj)
 }
 
 /**
- * Para cada grupo de faces, atribui uma cor aleatória. Se o objeto não tiver grupos,
- * ou tiver apenas um grupo, uma cor aleatória é atribuída a cada 2 faces consecutivas
- */
+* Para cada grupo de faces, atribui uma cor aleatória. Se o objeto não tiver grupos,
+* ou tiver apenas um grupo, uma cor aleatória é atribuída a cada 2 faces consecutivas
+*/
 function load_colors(gl, n_faces, groups)
 {
     const data = [];
@@ -473,7 +494,7 @@ function init_controls()
 
     // Objeto
     document.getElementById("rotacao").onchange = () => {
-      rotacao = document.getElementById("rotacao").checked;
+        rotacao = document.getElementById("rotacao").checked;
     };
 
     // Outros
@@ -512,7 +533,7 @@ function init_controls()
     }
 
     // Carregar objeto
-    document.getElementById("obj_lista").onchange = async () => {
+    const reload = async () => {
         cancelAnimationFrame(reqId);
 
         gl = undefined;
@@ -566,9 +587,27 @@ function init_controls()
         normals_available = false;
 
         document.getElementById("radio_usar_norm").disabled = false;
+    };
 
+    document.getElementById("obj_lista").onchange = () => {
+        reload();
         main();
-    }
+    };
+
+    document.getElementById('obj_externo').onchange = (evt) => {
+        readSingleFile(evt, (contents) => {
+            reload();
+            main(false, contents);
+        });
+    };
+}
+
+function external_init_obj(file_contents) {
+    obj = parse_obj(file_contents);
+
+    // Encontra bbox do objeto
+    bbox = find_bbox(obj.vertices);
+    reposition_vector = vec3.fromValues(-bbox.centro.xc, -bbox.centro.yc, -bbox.centro.zc);
 }
 
 function init_light()
@@ -611,7 +650,7 @@ async function init_obj()
     reposition_vector = vec3.fromValues(-bbox.centro.xc, -bbox.centro.yc, -bbox.centro.zc);
 }
 
-async function main()
+async function main(internal=true, file_contents)
 {
     // Inicializações em geral
     seed = Date.now();
@@ -624,7 +663,79 @@ async function main()
         throw Error("Sem suporte a WebGL 2.0");
     }
 
-    await init_obj();
+    init_controls();
+    if (internal && window.location.protocol != "file:") {
+        await init_obj();
+    } else if (file_contents != undefined) {
+        external_init_obj(file_contents);
+    } else {
+        obj = {
+            normals: [],
+            groups: [],
+            vertices: [
+                {x: 0, y: 0, z: 0},
+                {x: 0, y: 0, z: 100},
+                {x: 0, y: 100, z: 0},
+                {x: 0, y: 100, z: 100},
+                {x: 100, y: 0, z: 0},
+                {x: 100, y: 0, z: 100},
+                {x: 100, y: 100, z: 0},
+                {x: 100, y: 100, z: 100},
+            ],
+            faces: [
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [0, 6, 4],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [0, 2, 6],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [0, 3, 2],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [0, 1, 3],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [2, 7, 6],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [2, 3, 7],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [4, 6, 7],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [4, 7, 5],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [0, 4, 5],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [0, 5, 1],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [1, 5, 7],
+                },
+                {
+                    normals: [undefined, undefined, undefined],
+                    vertices: [1, 7, 3],
+                },
+            ]
+        };
+        bbox = find_bbox(obj.vertices);
+        reposition_vector = vec3.fromValues(-bbox.centro.xc, -bbox.centro.yc, -bbox.centro.zc);
+    }
     init_projection();
     init_light();
 
@@ -699,50 +810,50 @@ async function main()
         -1.5 * bbox.dimensoes.largura/2,
         1.5 * bbox.dimensoes.altura/2,
         1.5 * bbox.dimensoes.profundidade/2,
-    );
+        );
 
-    // Inicializa os controles só agora, pra usar ranges que fazem sentido
-    init_controls();
+        // Inicializa os controles só agora, pra usar ranges que fazem sentido
+        init_controls();
 
-    // Draw the scene.
-    drawScene = function(time)
-    {
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        // Draw the scene.
+        drawScene = function(time)
+        {
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        // Rotação do objeto
-        if (rotacao) {
-            mat4.rotate(transform, initial_transform, time*0.002, yup);
-            mat4.translate(transform, transform, reposition_vector);
+            // Rotação do objeto
+            if (rotacao) {
+                mat4.rotate(transform, initial_transform, time*0.002, yup);
+                mat4.translate(transform, transform, reposition_vector);
+            }
+
+            gl.uniformMatrix4fv(u_projectionview, false, projectionview);
+            gl.uniformMatrix4fv(u_modelview, false, modelview);
+            gl.uniformMatrix4fv(u_transform, false, transform);
+
+            const transform_invtransp = mat4.create();
+            mat4.invert(transform_invtransp, transform);
+            mat4.transpose(transform_invtransp, transform_invtransp);
+
+            gl.uniformMatrix4fv(u_transform, false, transform);
+            gl.uniformMatrix4fv(u_transform_invtransp, false, transform_invtransp);
+
+            gl.uniform3fv(u_eyeposition, eye);
+            gl.uniform3fv(u_lightposition, light_position);
+
+            gl.uniform1f(u_intensidade, intensidade);
+            gl.uniform1f(u_kd, kd);
+            gl.uniform1f(u_intensidade_amb, intensidade_amb);
+            gl.uniform1f(u_ka, ka);
+            gl.uniform1f(u_shininess, shininess);
+            gl.uniform1f(u_ke, ke);
+
+            gl.drawArrays(gl.TRIANGLES, 0, 3 * obj.faces.length);
+
+            reqId = window.requestAnimationFrame(drawScene);
         }
-
-        gl.uniformMatrix4fv(u_projectionview, false, projectionview);
-        gl.uniformMatrix4fv(u_modelview, false, modelview);
-        gl.uniformMatrix4fv(u_transform, false, transform);
-
-        const transform_invtransp = mat4.create();
-        mat4.invert(transform_invtransp, transform);
-        mat4.transpose(transform_invtransp, transform_invtransp);
-
-        gl.uniformMatrix4fv(u_transform, false, transform);
-        gl.uniformMatrix4fv(u_transform_invtransp, false, transform_invtransp);
-
-        gl.uniform3fv(u_eyeposition, eye);
-        gl.uniform3fv(u_lightposition, light_position);
-
-        gl.uniform1f(u_intensidade, intensidade);
-        gl.uniform1f(u_kd, kd);
-        gl.uniform1f(u_intensidade_amb, intensidade_amb);
-        gl.uniform1f(u_ka, ka);
-        gl.uniform1f(u_shininess, shininess);
-        gl.uniform1f(u_ke, ke);
-
-        gl.drawArrays(gl.TRIANGLES, 0, 3 * obj.faces.length);
 
         reqId = window.requestAnimationFrame(drawScene);
     }
 
-    reqId = window.requestAnimationFrame(drawScene);
-}
 
-
-main();
+    main();
