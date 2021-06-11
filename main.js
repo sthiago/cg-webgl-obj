@@ -7,6 +7,7 @@ const zout = vec3.fromValues(0, 0, 1);
 
 let gl;
 let drawScene;
+let reqId;
 
 // Objeto
 let obj;
@@ -16,19 +17,19 @@ let bbox;
 // Câmera sintética
 let eye;
 let target = origin;
-const modelview = mat4.create();
+let modelview = mat4.create();
 let eye_dx = 0, eye_dy = 0, eye_dz = 0;
 let eye_rx = 0, eye_ry = 0, eye_rz = 0;
 
 // Projeção
-const projectionview = mat4.create();
+let projectionview = mat4.create();
 let tipo_projecao, fovy, aspect, near, far;
 let left, right, bottom, _top;
 
 // Objeto (transformações)
 let rotacao = false;
-const transform = mat4.create();
-const identity = mat4.create();
+let transform = mat4.create();
+let identity = mat4.create();
 
 let zbuffer = true;
 let facecull = true;
@@ -504,6 +505,61 @@ function init_controls()
     if (!normals_available) {
         document.getElementById("radio_usar_norm").disabled = true;
     }
+
+    // Carregar objeto
+    document.getElementById("obj_lista").onchange = async () => {
+        cancelAnimationFrame(reqId);
+
+        gl = undefined;
+        drawScene = undefined;
+        reqId = undefined;
+
+        // Objeto
+        obj = undefined;
+        reposition_vector = undefined;
+        bbox = undefined;
+
+        // Câmera sintética
+        eye = undefined;
+        target = origin;
+        modelview = mat4.create();
+        eye_dx = 0; eye_dy = 0; eye_dz = 0;
+        eye_rx = 0; eye_ry = 0; eye_rz = 0;
+
+        // Projeção
+        projectionview = mat4.create();
+        tipo_projecao = undefined;
+        fovy = undefined;
+        aspect = undefined;
+        near = undefined;
+        far = undefined;
+        left = undefined;
+        right = undefined;
+        bottom = undefined;
+        _top = undefined;
+
+        // Objeto (transformações)
+        rotacao = false;
+        transform = mat4.create();
+
+        zbuffer = true;
+        facecull = true;
+
+        // Iluminação
+        light_position = undefined;
+        intensidade = undefined;
+        kd = undefined;
+        ke = undefined;
+        shininess = undefined;
+        intensidade_amb = undefined;
+        ka = undefined;
+        calculate_normals = true;
+        normals_available = false;
+
+        document.getElementById("radio_usar_norm").disabled = false;
+
+        main();
+    }
 }
 
 function init_light()
@@ -519,8 +575,11 @@ function init_light()
 
 async function init_obj()
 {
+    arquivo = document.getElementById("obj_lista").value;
+    console.log(arquivo);
+
     // Lê arquivo.obj
-    const resp = await fetch("objs/deer.obj");
+    const resp = await fetch("objs/" + arquivo);
     const str = await resp.text();
     obj = parse_obj(str);
 
@@ -656,12 +715,12 @@ async function main()
         gl.uniform1f(u_shininess, shininess);
         gl.uniform1f(u_ke, ke);
 
-        gl.drawArrays(gl.TRIANGLES, 0, obj.faces.length * obj.vertices.length);
+        gl.drawArrays(gl.TRIANGLES, 0, 3 * obj.faces.length);
 
-        window.requestAnimationFrame(drawScene);
+        reqId = window.requestAnimationFrame(drawScene);
     }
 
-    window.requestAnimationFrame(drawScene);
+    reqId = window.requestAnimationFrame(drawScene);
 }
 
 
