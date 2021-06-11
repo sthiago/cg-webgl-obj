@@ -58,10 +58,12 @@
     <script id="vs" type="x-shader/x-vertex"># version 300 es
         in vec3 a_position;
         in vec3 a_normal;
+        in vec3 a_color;
 
         out vec3 v_normal;
         out vec3 v_lightdirection; // vértice -> luz
         out vec3 v_eyedirection; // vértice -> eye
+        out vec3 v_color;
 
         uniform mat4 u_projectionview;
         uniform mat4 u_modelview;
@@ -84,6 +86,8 @@
 
             // Cálculo do vetor de direção do eye
             v_eyedirection = u_eyeposition - (u_transform * vec4(a_position, 1)).xyz;
+
+            v_color = a_color;
         }
     </script>
 
@@ -93,8 +97,8 @@
         in vec3 v_normal;
         in vec3 v_lightdirection;
         in vec3 v_eyedirection;
+        in vec3 v_color;
 
-        uniform vec3 u_color;
         uniform float u_kd;
         uniform float u_intensidade;
         uniform float u_ka;
@@ -109,12 +113,12 @@
 
             // Componente ambiente
             float ambient = u_intensidade_amb * u_ka;
-            vec3 ambient_comp = u_color * ambient;
+            vec3 ambient_comp = v_color * ambient;
 
             // Componente difusa
             vec3 lightdirection = normalize(v_lightdirection);
             float diffuse = u_intensidade * u_kd * dot(normal, lightdirection);
-            vec3 diffuse_comp = u_color * diffuse;
+            vec3 diffuse_comp = v_color * diffuse;
 
             // Componente especular
             vec3 eyedirection = normalize(v_eyedirection);
@@ -125,7 +129,7 @@
                 specular = u_intensidade * u_ke * pow(dot(normal, halfVector), u_shininess);
             }
 
-            vec3 specular_comp = u_color * specular;
+            vec3 specular_comp = v_color * specular;
 
             vec3 color = ambient_comp + diffuse_comp + specular_comp;
             outColor = vec4(color, 1.0);

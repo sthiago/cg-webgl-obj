@@ -9,6 +9,10 @@ let gl;
 let drawScene;
 let reqId;
 
+let positionBuffer;
+let normalBuffer;
+let colorBuffer;
+
 // Objeto
 let obj;
 let reposition_vector;
@@ -194,6 +198,7 @@ function load_normals(obj)
                 data.push(normal.x, normal.y, normal.z);
             }
         }
+        gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
         return;
     }
@@ -224,6 +229,7 @@ function load_normals(obj)
         data.push(normal[0], normal[1], normal[2]);
     }
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
 }
 
@@ -236,14 +242,12 @@ function load_colors(gl, n_faces, groups)
     const data = [];
 
     if (groups.length == 0) {
-        // De 2 em 2 pra ficar aproximadamente 1 cor por retângulo em vez de 1 cor por
-        // triângulo
-        for (let i = 0; i < n_faces; i+=2) {
-            const colorR = Math.floor(random() * 256);
-            const colorG = Math.floor(random() * 256);
-            const colorB = Math.floor(random() * 256);
+        const colorR = Math.floor(random() * 256);
+        const colorG = Math.floor(random() * 256);
+        const colorB = Math.floor(random() * 256);
+        for (let i = 0; i < n_faces; i+=1) {
             data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
-            data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
+            // data.push(colorR, colorG, colorB,colorR, colorG, colorB,colorR, colorG, colorB);
         }
     } else {
         for (const n_faces_no_grupo of groups) {
@@ -256,6 +260,7 @@ function load_colors(gl, n_faces, groups)
         }
     }
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Uint8Array(data), gl.STATIC_DRAW);
 }
 
@@ -514,6 +519,10 @@ function init_controls()
         drawScene = undefined;
         reqId = undefined;
 
+        positionBuffer = undefined;
+        normalBuffer = undefined;
+        colorBuffer = undefined;
+
         // Objeto
         obj = undefined;
         reposition_vector = undefined;
@@ -571,6 +580,20 @@ function init_light()
     ka = 0.2;
     ke = 0.9;
     shininess = 50;
+
+    document.getElementById("int_ambiente_val").textContent = intensidade_amb;
+    document.getElementById("ka_val").textContent = ka;
+    document.getElementById("intensidade_val").textContent = intensidade;
+    document.getElementById("kd_val").textContent = kd;
+    document.getElementById("ke_val").textContent = ke;
+    document.getElementById("shininess_val").textContent = shininess;
+
+    document.getElementById("int_ambiente").value = intensidade_amb;
+    document.getElementById("ka").value = ka;
+    document.getElementById("intensidade").value = intensidade;
+    document.getElementById("kd").value = kd;
+    document.getElementById("ke").value = ke;
+    document.getElementById("shininess").value = shininess;
 }
 
 async function init_obj()
@@ -591,7 +614,7 @@ async function init_obj()
 async function main()
 {
     // Inicializações em geral
-    seed = 1;
+    seed = Date.now();
 
     const canvas = document.querySelector("#canvas");
     gl = canvas.getContext("webgl2");
@@ -611,7 +634,7 @@ async function main()
     // Configuração de atributos e uniforms
     const a_position = gl.getAttribLocation(program, "a_position");
     const a_normal = gl.getAttribLocation(program, "a_normal");
-    // const a_color = gl.getAttribLocation(program, "a_color");
+    const a_color = gl.getAttribLocation(program, "a_color");
     const u_modelview = gl.getUniformLocation(program, "u_modelview");
     const u_projectionview = gl.getUniformLocation(program, "u_projectionview");
     const u_transform = gl.getUniformLocation(program, "u_transform");
@@ -620,7 +643,6 @@ async function main()
     // Atributos e uniforms relacionas à iluminação
     const u_eyeposition = gl.getUniformLocation(program, "u_eyeposition");
     const u_lightposition = gl.getUniformLocation(program, "u_lightposition");
-    const u_color = gl.getUniformLocation(program, "u_color");
     const u_kd = gl.getUniformLocation(program, "u_kd");
     const u_intensidade = gl.getUniformLocation(program, "u_intensidade");
     const u_ka = gl.getUniformLocation(program, "u_ka");
@@ -632,25 +654,25 @@ async function main()
     gl.bindVertexArray(vao);
 
     // Carrega vértices no buffer
-    const positionBuffer = gl.createBuffer();
+    positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.enableVertexAttribArray(a_position);
     gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 0, 0);
     load_obj(obj);
 
     // Calcula normais e carrega no buffer
-    const normalBuffer = gl.createBuffer();
+    normalBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
     gl.enableVertexAttribArray(a_normal);
     gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 0, 0);
     load_normals(obj);
 
     // Carrega cores no buffer
-    // const colorBuffer = gl.createBuffer();
-    // gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    // gl.enableVertexAttribArray(a_color);
-    // gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
-    // load_colors(gl, obj.faces.length, obj.groups);
+    colorBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+    gl.enableVertexAttribArray(a_color);
+    gl.vertexAttribPointer(a_color, 3, gl.UNSIGNED_BYTE, true, 0, 0);
+    load_colors(gl, obj.faces.length, obj.groups);
 
     // Mais inicializações de GL
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -706,7 +728,6 @@ async function main()
 
         gl.uniform3fv(u_eyeposition, eye);
         gl.uniform3fv(u_lightposition, light_position);
-        gl.uniform3fv(u_color, [0.2, 1, 0.2]); // green
 
         gl.uniform1f(u_intensidade, intensidade);
         gl.uniform1f(u_kd, kd);
