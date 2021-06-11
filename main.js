@@ -358,10 +358,10 @@ function init_projection()
     mat4.perspective(projectionview, degToRad(fovy), aspect, near, far);
 
     // Inicializa valores da ortográfica também
-    left = -10;
-    right = 10;
-    bottom = Math.floor(-10 / aspect);
-    _top = Math.floor(10 / aspect);
+    left = -1.5 * bbox.dimensoes.largura/2;
+    right = 1.5 * bbox.dimensoes.largura/2;
+    bottom = Math.floor(left / aspect);
+    _top = Math.floor(right / aspect);
 
     // Inicializa valores da UI
     document.getElementById("near").value = near;
@@ -520,7 +520,7 @@ function init_light()
 async function init_obj()
 {
     // Lê arquivo.obj
-    const resp = await fetch("objs/teapot.obj");
+    const resp = await fetch("objs/deer.obj");
     const str = await resp.text();
     obj = parse_obj(str);
 
