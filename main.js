@@ -409,16 +409,13 @@ function update_camera()
     const translated_target = vec3.create();
     vec3.add(translated_target, target, translation);
 
-    // Rotaciona o target em relação à câmera
-    const rotated_target = vec3.create();
-    vec3.rotateY(rotated_target, translated_target, eye, degToRad(eye_ry));
-    vec3.rotateX(rotated_target, rotated_target, eye, degToRad(eye_rx));
-
-    const up = vec3.create();
-    vec3.rotateZ(up, yup, eye, degToRad(eye_rz));
-
     // Atualiza ModelView
-    mat4.lookAt(modelview, translated_eye, rotated_target, up);
+    mat4.lookAt(modelview, translated_eye, translated_target, yup);
+
+    // Rotaciona ModelView
+    mat4.rotate(modelview, modelview, degToRad(eye_rx), xup);
+    mat4.rotate(modelview, modelview, degToRad(eye_ry), yup);
+    mat4.rotate(modelview, modelview, degToRad(eye_rz), zout);
 }
 
 
